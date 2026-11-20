@@ -103,8 +103,18 @@ export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
 
           <div className="w-full max-w-[420px] sm:max-w-[460px] mx-auto my-auto bg-[#F4F5F7] rounded-none p-8 sm:p-10 border border-zinc-200/90 space-y-6">
 
+            {/* Logo in Card Center */}
+            <div className="flex justify-center -mb-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo.jpg"
+                alt="ShipProof Logo"
+                className="w-16 h-16 sm:w-20 sm:h-20 object-contain mx-auto mix-blend-multiply select-none"
+              />
+            </div>
+
             {/* Main Heading */}
-            <div>
+            <div className="text-center">
               <h1 className="text-xl sm:text-2xl font-extrabold text-zinc-900 tracking-tight leading-[1.2]">
                 Sign in to our<br />packing portal today
               </h1>
