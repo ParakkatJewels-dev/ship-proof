@@ -322,12 +322,12 @@ export function VmsDashboard() {
       <div className="w-full max-w-[1640px] mx-auto flex flex-col lg:flex-row gap-5 items-start">
 
         {/* ================= COLUMN 1: LEFT SIDEBAR ================= */}
-        <aside className="w-full lg:w-[200px] shrink-0 flex flex-col justify-between self-stretch bg-transparent py-1">
+        <aside className="w-full lg:w-[220px] shrink-0 flex flex-col justify-between self-stretch bg-transparent py-1">
           <div className="space-y-6">
 
             {/* Logo Brand: ShipProof */}
             <Link href="/" className="flex items-center space-x-2.5 px-1 group">
-              <div className="w-13 h-13 shrink-0 flex items-center justify-center bg-transparent">
+              <div className="w-16 h-16 shrink-0 flex items-center justify-center bg-transparent">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src="/logo.png"
@@ -335,7 +335,7 @@ export function VmsDashboard() {
                   className="w-full h-full object-contain select-none group-hover:scale-105 transition-transform"
                 />
               </div>
-              <span className="font-calligraphy font-bold text-2xl sm:text-[26px] text-zinc-900 group-hover:text-[#3654D6] leading-tight tracking-wide transition-colors">
+              <span className="font-calligraphy font-bold text-2xl sm:text-[26px] text-zinc-900 group-hover:text-[#3654D6] leading-tight tracking-wide transition-colors whitespace-nowrap">
                 ShipProof
               </span>
             </Link>
