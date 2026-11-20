@@ -7,13 +7,18 @@
     "apps/*"
   ],
   "scripts": {
+    "dev": "npm --prefix apps/web run dev",
+    "dev:web": "npm --prefix apps/web run dev",
+    "dev:api": "npm --prefix apps/api run dev",
+    "dev:agent": "npm --prefix apps/camera-agent run dev",
+    "dev:all": "concurrently -n \"WEB,API,AGENT\" -c \"cyan,magenta,yellow\" \"npm run dev:web\" \"npm run dev:api\" \"npm run dev:agent\"",
     "build:shared": "npm --prefix packages/shared run build",
     "build:api": "npm --prefix apps/api run build",
     "build:agent": "npm --prefix apps/camera-agent run build",
     "build:web": "npm --prefix apps/web run build",
-    "build": "npm run build:shared && npm run build:api && npm run build:agent",
-    "dev:api": "npm --prefix apps/api run dev",
-    "dev:agent": "npm --prefix apps/camera-agent run dev",
-    "dev:web": "npm --prefix apps/web run dev"
+    "build": "npm run build:shared && npm run build:api && npm run build:agent && npm run build:web"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.7"
   }
 }
