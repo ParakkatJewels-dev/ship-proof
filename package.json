@@ -1,28 +1,19 @@
 {
-  "name": "shipproof",
-  "version": "0.1.0",
+  "name": "shipproof-root",
+  "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build --webpack",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "next": "16.4.6",
-    "react": "19.3.0",
-    "react-dom": "19.3.0"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4.3.5",
-    "@tailwindcss/turbopack": "4.3.3",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.4.6",
-    "postcss": "^8.5.33",
-    "tailwindcss": "4.3.3",
-    "typescript": "^5"
+    "build:shared": "npm --prefix packages/shared run build",
+    "build:api": "npm --prefix apps/api run build",
+    "build:agent": "npm --prefix apps/camera-agent run build",
+    "build:web": "npm --prefix apps/web run build",
+    "build": "npm run build:shared && npm run build:api && npm run build:agent",
+    "dev:api": "npm --prefix apps/api run dev",
+    "dev:agent": "npm --prefix apps/camera-agent run dev",
+    "dev:web": "npm --prefix apps/web run dev"
   }
 }

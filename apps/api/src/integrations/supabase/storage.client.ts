@@ -1,0 +1,72 @@
+import { supabase, isMockSupabase } from "./db.client.js";
+import { config } from "../../config/env.config.js";
+import { logger } from "../../utils/logger.js";
+
+export class StorageService {
+  private bucket = config.supabase.bucket;
+
+  /**
+   * Generates a signed upload URL for the camera agent to upload directly to Supabase Storage.
+   */
+  async createSignedUploadUrl(filePath: string): Promise<{ signedUrl: string; token: string }> {
+    if (isMockSupabase) {
+      return {
+        signedUrl: `https://mock-storage.supabase.co/upload/${this.bucket}/${filePath}`,
+        token: `mock-token-${Date.now()}`,
+      };
+    }
+
+    const { data, error } = await supabase.storage
+      .from(this.bucket)
+      .createSignedUploadUrl(filePath);
+
+    if (error || !data) {
+      logger.error("Failed to generate signed upload URL", error);
+      throw new Error(`Storage error: ${error?.message || "Failed to create upload URL"}`);
+    }
+
+    return {
+      signedUrl: data.signedUrl,
+      token: data.token,
+    };
+  }
+
+  /**
+   * Generates a temporary signed download URL for viewing or customer playback.
+   */
+  async createSignedDownloadUrl(filePath: string, expiresInSeconds = 3600): Promise<string> {
+    if (isMockSupabase) {
+      return `https://mock-storage.supabase.co/download/${this.bucket}/${filePath}?token=mock-token`;
+    }
+
+    const { data, error } = await supabase.storage
+      .from(this.bucket)
+      .createSignedUrl(filePath, expiresInSeconds);
+
+    if (error || !data) {
+      logger.error("Failed to generate signed download URL", error);
+      throw new Error(`Storage error: ${error?.message || "Failed to create download URL"}`);
+    }
+
+    return data.signedUrl;
+  }
+
+  /**
+   * Deletes video object from storage upon retention expiry.
+   */
+  async deleteFile(filePath: string): Promise<boolean> {
+    if (isMockSupabase) {
+      logger.info(`[Mock Storage] Deleted ${filePath}`);
+      return true;
+    }
+
+    const { error } = await supabase.storage.from(this.bucket).remove([filePath]);
+    if (error) {
+      logger.error(`Failed to delete storage file: ${filePath}`, error);
+      return false;
+    }
+    return true;
+  }
+}
+
+export const storageService = new StorageService();
