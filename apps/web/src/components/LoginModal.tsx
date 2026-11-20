@@ -79,208 +79,203 @@ export function LoginModal({ isOpen, onClose, onLogin, selectedStation }: LoginM
           ✕
         </button>
 
-          {/* ================= LEFT COLUMN: BRANDING (SOLID BLUE #3654D6) ================= */}
-          <div className="md:col-span-5 bg-[#3654D6] p-6 sm:p-8 flex flex-col items-center justify-center text-center relative text-white min-h-[360px] md:min-h-[520px]">
+        {/* ================= LEFT COLUMN: BRANDING (SOLID BLUE #3654D6) ================= */}
+        <div className="md:col-span-5 bg-[#3654D6] p-6 sm:p-8 flex flex-col items-center justify-center text-center relative text-white min-h-[360px] md:min-h-[520px]">
 
-                {/* Center Graphic: Large Packing Illustration */}
-                <div className="my-auto py-4 flex flex-col items-center justify-center text-center z-10 w-full max-w-[320px]">
-                  <div className="relative w-full flex items-center justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/packing-illustration.jpg"
-                      alt="ShipProof Order Packing Station Illustration"
-                      className="w-full h-auto max-h-[320px] object-contain rounded-xl select-none"
-                    />
-                  </div>
-
-                  {/* ShipProof text below the image */}
-                  <div className="mt-4 text-center">
-                    <div className="inline-flex items-center space-x-2.5">
-                      <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center font-extrabold text-white text-xs border border-white/30 shadow-sm">
-                        SP
-                      </div>
-                      <span className="font-extrabold text-2xl tracking-tight text-white block leading-tight">
-                        ShipProof
-                      </span>
-                    </div>
-                    <p className="text-[11px] font-medium text-blue-100/90 tracking-wider uppercase mt-1">
-                      Order Packing Video Verification
-                    </p>
-                  </div>
-                </div>
-
-              </div>
-
-            {/* ================= RIGHT COLUMN: LOGIN SECTION (PURE WHITE #FFFFFF) ================= */}
-            <div className="md:col-span-7 p-8 sm:p-12 flex flex-col justify-center bg-white text-zinc-900">
-
-              <div className="mb-6">
-                <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight leading-snug">
-                  Sign in to our packing portal today
-                </h1>
-                <p className="text-xs text-zinc-500 mt-1.5 font-medium">
-                  Secure authentication for warehouse packers and admin auditors
-                </p>
-              </div>
-
-              {error && (
-                <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
-                  ⚠️ {error}
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-6">
-
-                {/* Section 1: "Your role" Selection Cards */}
-                <div>
-                  <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-2.5">
-                    Your role
-                  </label>
-
-                  < div className="space-y-2.5">
-                    {/* Packer Option Card */}
-                    <div
-                      onClick={() => {
-                        setRole("packer");
-                        setError(null);
-                      }}
-                      className={`p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${role === "packer"
-                        ? "bg-[#eef3ff] border-2 border-[#3654D6] text-[#3654D6] font-bold shadow-sm"
-                        : "bg-zinc-50 hover:bg-zinc-100 border-zinc-200 text-zinc-700"
-                        }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div
-                          className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${role === "packer"
-                            ? "bg-[#3654D6] text-white text-xs font-bold"
-                            : "border-2 border-zinc-300 bg-white"
-                            }`}
-                        >
-                          {role === "packer" && "✓"}
-                        </div>
-                        <span className="text-xs font-bold">
-                          Packer Station (Warehouse Bay)
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Admin Option Card */}
-                    <div
-                      onClick={() => {
-                        setRole("admin");
-                        setError(null);
-                      }}
-                      className={`p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${role === "admin"
-                        ? "bg-[#eef3ff] border-2 border-[#3654D6] text-[#3654D6] font-bold shadow-sm"
-                        : "bg-zinc-50 hover:bg-zinc-100 border-zinc-200 text-zinc-700"
-                        }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div
-                          className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${role === "admin"
-                            ? "bg-[#3654D6] text-white text-xs font-bold"
-                            : "border-2 border-zinc-300 bg-white"
-                            }`}
-                        >
-                          {role === "admin" && "✓"}
-                        </div>
-                        <span className="text-xs font-bold">
-                          Administrator (Audit & Retention)
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section 2: Input Details */}
-                <div>
-                  <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-2.5">
-                    {role === "packer" ? "About yourself" : "Admin credentials"}
-                  </label>
-
-                  <div className="space-y-3">
-                    {role === "packer" ? (
-                      <>
-                        <input
-                          type="text"
-                          value={packerName}
-                          onChange={(e) => setPackerName(e.target.value)}
-                          placeholder="Full name or Employee ID"
-                          required
-                          className="w-full text-xs font-medium px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:border-[#3654D6] focus:ring-2 focus:ring-[#3654D6]/20 transition-all shadow-sm"
-                        />
-
-                        <select
-                          value={stationBay}
-                          onChange={(e) => setStationBay(e.target.value)}
-                          className="w-full text-xs font-semibold px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 focus:bg-white focus:outline-none focus:border-[#3654D6] focus:ring-2 focus:ring-[#3654D6]/20 transition-all shadow-sm cursor-pointer"
-                        >
-                          <option value="STATION-01">Bay 1 • Bengaluru Warehouse (Logitech 1080p)</option>
-                          <option value="STATION-02">Bay 2 • Bengaluru Warehouse (RTSP Cam 02)</option>
-                          <option value="STATION-03">Bay 3 • Kochi Showroom (4K Desk Cam)</option>
-                        </select>
-
-                        <input
-                          type="password"
-                          value={packerPin}
-                          onChange={(e) => setPackerPin(e.target.value)}
-                          placeholder="Security PIN (e.g. 1234)"
-                          required
-                          className="w-full text-xs font-mono px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:border-[#3654D6] focus:ring-2 focus:ring-[#3654D6]/20 transition-all shadow-sm"
-                        />
-                      </>
-                    ) : (
-                      <>
-                        <input
-                          type="email"
-                          value={adminEmail}
-                          onChange={(e) => setAdminEmail(e.target.value)}
-                          placeholder="Admin Email (e.g. admin@shipproof.com)"
-                          required
-                          className="w-full text-xs font-medium px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:border-[#3654D6] focus:ring-2 focus:ring-[#3654D6]/20 transition-all shadow-sm"
-                        />
-
-                        <input
-                          type="password"
-                          value={adminPassword}
-                          onChange={(e) => setAdminPassword(e.target.value)}
-                          placeholder="Password (e.g. admin123)"
-                          required
-                          className="w-full text-xs font-mono px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:border-[#3654D6] focus:ring-2 focus:ring-[#3654D6]/20 transition-all shadow-sm"
-                        />
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {/* Primary Action Button */}
-                <div>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-4 px-4 rounded-xl bg-[#3654D6] hover:bg-[#2b45b5] text-white font-extrabold text-sm shadow-lg shadow-[#3654D6]/25 transition-all cursor-pointer flex items-center justify-center space-x-2 active:scale-[0.99]"
-                  >
-                    <span>{loading ? "Authenticating..." : role === "packer" ? "Access Packing Bay" : "Open Admin Console"}</span>
-                    <span>→</span>
-                  </button>
-                </div>
-
-                {/* Quick Demo Fill */}
-                <div className="pt-2 flex items-center justify-between text-xs text-zinc-500">
-                  <span>Demo credentials ready</span>
-                  <button
-                    type="button"
-                    onClick={() => handleSubmit()}
-                    className="text-[#3654D6] font-bold hover:underline cursor-pointer"
-                  >
-                    ⚡ 1-Click Fast Fill
-                  </button>
-                </div>
-
-              </form>
+          {/* Center Graphic: Large Packing Illustration */}
+          <div className="my-auto py-4 flex flex-col items-center justify-center text-center z-10 w-full max-w-[320px]">
+            <div className="relative w-full flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/packing-illustration.jpg"
+                alt="ShipProof Order Packing Station Illustration"
+                className="w-full h-auto max-h-[320px] object-contain rounded-xl select-none"
+              />
             </div>
 
+            {/* ShipProof Calligraphy text below the image */}
+            <div className="mt-3 text-center">
+              <span className="font-calligraphy text-4xl sm:text-5xl text-white block leading-tight tracking-wide drop-shadow-sm">
+                ShipProof
+              </span>
+              <p className="text-[11px] font-medium text-blue-100/90 tracking-widest uppercase mt-1">
+                Order Packing Video Verification
+              </p>
+            </div>
           </div>
+
         </div>
-        );
+
+        {/* ================= RIGHT COLUMN: LOGIN SECTION (PURE WHITE #FFFFFF) ================= */}
+        <div className="md:col-span-7 p-8 sm:p-12 flex flex-col justify-center bg-white text-zinc-900">
+
+          <div className="mb-6">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight leading-snug">
+              Sign in to our packing portal today
+            </h1>
+            <p className="text-xs text-zinc-500 mt-1.5 font-medium">
+              Secure authentication for warehouse packers and admin auditors
+            </p>
+          </div>
+
+          {error && (
+            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
+              ⚠️ {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+
+            {/* Section 1: "Your role" Selection Cards */}
+            <div>
+              <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-2.5">
+                Your role
+              </label>
+
+              < div className="space-y-2.5">
+                {/* Packer Option Card */}
+                <div
+                  onClick={() => {
+                    setRole("packer");
+                    setError(null);
+                  }}
+                  className={`p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${role === "packer"
+                    ? "bg-[#eef3ff] border-2 border-[#3654D6] text-[#3654D6] font-bold shadow-sm"
+                    : "bg-zinc-50 hover:bg-zinc-100 border-zinc-200 text-zinc-700"
+                    }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${role === "packer"
+                        ? "bg-[#3654D6] text-white text-xs font-bold"
+                        : "border-2 border-zinc-300 bg-white"
+                        }`}
+                    >
+                      {role === "packer" && "✓"}
+                    </div>
+                    <span className="text-xs font-bold">
+                      Packer Station (Warehouse Bay)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Admin Option Card */}
+                <div
+                  onClick={() => {
+                    setRole("admin");
+                    setError(null);
+                  }}
+                  className={`p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${role === "admin"
+                    ? "bg-[#eef3ff] border-2 border-[#3654D6] text-[#3654D6] font-bold shadow-sm"
+                    : "bg-zinc-50 hover:bg-zinc-100 border-zinc-200 text-zinc-700"
+                    }`}
+                >
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${role === "admin"
+                        ? "bg-[#3654D6] text-white text-xs font-bold"
+                        : "border-2 border-zinc-300 bg-white"
+                        }`}
+                    >
+                      {role === "admin" && "✓"}
+                    </div>
+                    <span className="text-xs font-bold">
+                      Administrator (Audit & Retention)
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 2: Input Details */}
+            <div>
+              <label className="block text-xs font-bold text-zinc-700 uppercase tracking-wider mb-2.5">
+                {role === "packer" ? "About yourself" : "Admin credentials"}
+              </label>
+
+              <div className="space-y-3">
+                {role === "packer" ? (
+                  <>
+                    <input
+                      type="text"
+                      value={packerName}
+                      onChange={(e) => setPackerName(e.target.value)}
+                      placeholder="Full name or Employee ID"
+                      required
+                      className="w-full text-xs font-medium px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:border-[#3654D6] focus:ring-2 focus:ring-[#3654D6]/20 transition-all shadow-sm"
+                    />
+
+                    <select
+                      value={stationBay}
+                      onChange={(e) => setStationBay(e.target.value)}
+                      className="w-full text-xs font-semibold px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 focus:bg-white focus:outline-none focus:border-[#3654D6] focus:ring-2 focus:ring-[#3654D6]/20 transition-all shadow-sm cursor-pointer"
+                    >
+                      <option value="STATION-01">Bay 1 • Bengaluru Warehouse (Logitech 1080p)</option>
+                      <option value="STATION-02">Bay 2 • Bengaluru Warehouse (RTSP Cam 02)</option>
+                      <option value="STATION-03">Bay 3 • Kochi Showroom (4K Desk Cam)</option>
+                    </select>
+
+                    <input
+                      type="password"
+                      value={packerPin}
+                      onChange={(e) => setPackerPin(e.target.value)}
+                      placeholder="Security PIN (e.g. 1234)"
+                      required
+                      className="w-full text-xs font-mono px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:border-[#3654D6] focus:ring-2 focus:ring-[#3654D6]/20 transition-all shadow-sm"
+                    />
+                  </>
+                ) : (
+                  <>
+                    <input
+                      type="email"
+                      value={adminEmail}
+                      onChange={(e) => setAdminEmail(e.target.value)}
+                      placeholder="Admin Email (e.g. admin@shipproof.com)"
+                      required
+                      className="w-full text-xs font-medium px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:border-[#3654D6] focus:ring-2 focus:ring-[#3654D6]/20 transition-all shadow-sm"
+                    />
+
+                    <input
+                      type="password"
+                      value={adminPassword}
+                      onChange={(e) => setAdminPassword(e.target.value)}
+                      placeholder="Password (e.g. admin123)"
+                      required
+                      className="w-full text-xs font-mono px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:border-[#3654D6] focus:ring-2 focus:ring-[#3654D6]/20 transition-all shadow-sm"
+                    />
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Primary Action Button */}
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-4 px-4 rounded-xl bg-[#3654D6] hover:bg-[#2b45b5] text-white font-extrabold text-sm shadow-lg shadow-[#3654D6]/25 transition-all cursor-pointer flex items-center justify-center space-x-2 active:scale-[0.99]"
+              >
+                <span>{loading ? "Authenticating..." : role === "packer" ? "Access Packing Bay" : "Open Admin Console"}</span>
+                <span>→</span>
+              </button>
+            </div>
+
+            {/* Quick Demo Fill */}
+            <div className="pt-2 flex items-center justify-between text-xs text-zinc-500">
+              <span>Demo credentials ready</span>
+              <button
+                type="button"
+                onClick={() => handleSubmit()}
+                className="text-[#3654D6] font-bold hover:underline cursor-pointer"
+              >
+                ⚡ 1-Click Fast Fill
+              </button>
+            </div>
+
+          </form>
+        </div>
+
+      </div>
+    </div>
+  );
 }
