@@ -128,7 +128,7 @@ export function AdminDashboard() {
             Auto-Purged (7-Day Expiry)
           </span>
           <div className="flex items-baseline space-x-2 mt-2">
-            <span className="text-3xl font-extrabold text-indigo-600">68</span>
+            <span className="text-3xl font-extrabold text-[#3154D6]">68</span>
             <span className="text-xs text-zinc-400">purged</span>
           </div>
           <p className="text-xs text-zinc-500 mt-1">Saved ~1.6 GB storage space</p>
@@ -184,7 +184,7 @@ export function AdminDashboard() {
                   </div>
                   <div className="flex justify-between text-zinc-600">
                     <span>Current Order:</span>
-                    <span className="font-bold text-indigo-600">{st.currentOrder}</span>
+                    <span className="font-bold text-[#3154D6]">{st.currentOrder}</span>
                   </div>
                 </div>
               </div>

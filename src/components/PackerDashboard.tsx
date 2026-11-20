@@ -180,7 +180,7 @@ export function PackerDashboard({ selectedStation }: { selectedStation: string }
                 <div>
                   <div className="flex items-center space-x-2">
                     <h2 className="text-xl font-bold text-zinc-900">{order.orderNumber}</h2>
-                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-[#eef3ff] text-[#3154D6] border border-[#3154D6]/20">
                       Shopify Verified
                     </span>
                   </div>
@@ -202,7 +202,7 @@ export function PackerDashboard({ selectedStation }: { selectedStation: string }
                   <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                     Package Item Checklist ({order.items.filter((i) => i.verified).length}/{order.items.length})
                   </h3>
-                  <span className="text-xs font-medium text-indigo-600">
+                  <span className="text-xs font-medium text-[#3154D6]">
                     Scan or tap each item to confirm inclusion
                   </span>
                 </div>
@@ -302,7 +302,7 @@ export function PackerDashboard({ selectedStation }: { selectedStation: string }
                   </div>
                   <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
                     <div
-                      className="bg-indigo-500 h-full transition-all duration-300"
+                      className="bg-[#3154D6] h-full transition-all duration-300"
                       style={{ width: `${uploadProgress}%` }}
                     />
                   </div>

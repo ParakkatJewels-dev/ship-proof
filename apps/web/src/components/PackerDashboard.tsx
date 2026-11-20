@@ -180,9 +180,9 @@ export function PackerDashboard({ selectedStation }: { selectedStation: string }
                 <div>
                   <div className="flex items-center space-x-2">
                     <h2 className="text-xl font-bold text-zinc-900">{order.orderNumber}</h2>
-                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                      Shopify Verified
-                    </span>
+                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-[#eef3ff] text-[#3154D6] border border-[#3154D6]/20">
+                        Shopify Verified
+                      </span>
                   </div>
                   <p className="text-xs text-zinc-500 mt-0.5">
                     Customer: <span className="font-semibold text-zinc-700">{order.customerName}</span> ({order.customerEmail})
@@ -202,20 +202,19 @@ export function PackerDashboard({ selectedStation }: { selectedStation: string }
                   <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-500">
                     Package Item Checklist ({order.items.filter((i) => i.verified).length}/{order.items.length})
                   </h3>
-                  <span className="text-xs font-medium text-indigo-600">
-                    Scan or tap each item to confirm inclusion
-                  </span>
+                    <span className="text-xs font-medium text-[#3154D6]">
+                      Scan or tap each item to confirm inclusion
+                    </span>
                 </div>
 
                 {order.items.map((item) => (
                   <div
                     key={item.id}
                     onClick={() => toggleItemVerify(item.id)}
-                    className={`p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
-                      item.verified
+                    className={`p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${item.verified
                         ? "bg-emerald-50/50 border-emerald-300"
                         : "bg-zinc-50 border-zinc-200 hover:border-zinc-300"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center space-x-3.5">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -240,9 +239,8 @@ export function PackerDashboard({ selectedStation }: { selectedStation: string }
 
                     <div className="flex items-center space-x-3">
                       <div
-                        className={`w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs transition-colors ${
-                          item.verified ? "bg-emerald-600 text-white" : "border-2 border-zinc-300"
-                        }`}
+                        className={`w-6 h-6 rounded-md flex items-center justify-center font-bold text-xs transition-colors ${item.verified ? "bg-emerald-600 text-white" : "border-2 border-zinc-300"
+                          }`}
                       >
                         {item.verified && "✓"}
                       </div>
@@ -302,7 +300,7 @@ export function PackerDashboard({ selectedStation }: { selectedStation: string }
                   </div>
                   <div className="w-full bg-zinc-800 h-2 rounded-full overflow-hidden">
                     <div
-                      className="bg-indigo-500 h-full transition-all duration-300"
+                      className="bg-[#3154D6] h-full transition-all duration-300"
                       style={{ width: `${uploadProgress}%` }}
                     />
                   </div>
@@ -336,11 +334,10 @@ export function PackerDashboard({ selectedStation }: { selectedStation: string }
                   <button
                     onClick={stopAndUpload}
                     disabled={!allItemsVerified}
-                    className={`w-full py-3.5 rounded-xl text-sm font-bold flex items-center justify-center space-x-2 transition-all ${
-                      allItemsVerified
+                    className={`w-full py-3.5 rounded-xl text-sm font-bold flex items-center justify-center space-x-2 transition-all ${allItemsVerified
                         ? "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/30 cursor-pointer"
                         : "bg-zinc-800 text-zinc-500 cursor-not-allowed"
-                    }`}
+                      }`}
                   >
                     <span>⏹ Finish Packing & Upload Proof</span>
                   </button>
