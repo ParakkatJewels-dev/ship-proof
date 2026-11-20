@@ -83,10 +83,10 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* ShipProof Calligraphy Text Below The Image */}
+          {/* ShipProof Signature Calligraphy Text Below The Image */}
           <div className="mt-3 sm:mt-4 text-center">
             <Link href="/" className="inline-block group">
-              <span className="font-calligraphy text-5xl sm:text-6xl lg:text-7xl text-white block leading-tight tracking-wide group-hover:scale-105 transition-transform drop-shadow-sm">
+              <span className="font-calligraphy font-bold text-5xl sm:text-6xl lg:text-7xl text-white block leading-tight tracking-wide group-hover:scale-105 transition-transform drop-shadow-sm">
                 ShipProof
               </span>
             </Link>

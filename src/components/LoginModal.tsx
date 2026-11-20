@@ -93,9 +93,9 @@ export function LoginModal({ isOpen, onClose, onLogin, selectedStation }: LoginM
               />
             </div>
 
-            {/* ShipProof Calligraphy text below the image */}
+            {/* ShipProof Signature Calligraphy text below the image */}
             <div className="mt-3 text-center">
-              <span className="font-calligraphy text-4xl sm:text-5xl text-white block leading-tight tracking-wide drop-shadow-sm">
+              <span className="font-calligraphy font-bold text-4xl sm:text-5xl text-white block leading-tight tracking-wide drop-shadow-sm">
                 ShipProof
               </span>
               <p className="text-[11px] font-medium text-blue-100/90 tracking-widest uppercase mt-1">
