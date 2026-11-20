@@ -28,13 +28,13 @@ export function Navbar({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand */}
             <Link href="/" className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-[#3956D7] flex items-center justify-center text-white font-bold text-lg shadow-sm shadow-blue-500/20">
+              <div className="w-10 h-10 rounded-xl bg-[#3654D6] flex items-center justify-center text-white font-bold text-lg shadow-sm shadow-blue-500/20">
                 SP
               </div>
               <div>
                 <div className="flex items-center space-x-2">
                   <span className="font-bold text-lg text-zinc-900 tracking-tight">ShipProof</span>
-                  <span className="text-[11px] font-semibold uppercase px-2 py-0.5 rounded-full bg-blue-50 text-[#3956D7] border border-blue-100">
+                  <span className="text-[11px] font-semibold uppercase px-2 py-0.5 rounded-full bg-blue-50 text-[#3654D6] border border-blue-100">
                     v1.0 Pro
                   </span>
                 </div>
@@ -99,12 +99,12 @@ export function Navbar({
           {currentUser ? (
             <div className="flex items-center space-x-2 pl-2 border-l border-zinc-200">
               <div className="flex items-center space-x-2 bg-zinc-50 border border-zinc-200 px-3 py-1.5 rounded-xl">
-                <span className="w-2 h-2 rounded-full bg-[#3956D7]" />
+                <span className="w-2 h-2 rounded-full bg-[#3654D6]" />
                 <div className="text-left">
                   <span className="text-xs font-bold text-zinc-800 block leading-tight">
                     {currentUser.name}
                   </span>
-                    <span className="text-[10px] font-semibold uppercase text-[#3956D7] tracking-wider">
+                    <span className="text-[10px] font-semibold uppercase text-[#3654D6] tracking-wider">
                       {currentUser.role}
                     </span>
                 </div>
@@ -120,7 +120,7 @@ export function Navbar({
           ) : (
           <Link
             href="/login"
-            className="px-4 py-2 rounded-xl bg-[#3956D7] hover:bg-[#2e47bd] text-white font-bold text-xs shadow-sm flex items-center space-x-1.5 transition-all cursor-pointer hover:shadow-md"
+            className="px-4 py-2 rounded-xl bg-[#3654D6] hover:bg-[#2b45b5] text-white font-bold text-xs shadow-sm flex items-center space-x-1.5 transition-all cursor-pointer hover:shadow-md"
           >
             <span>🔑</span>
             <span>Login</span>

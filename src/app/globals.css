@@ -3,14 +3,14 @@
 
 @theme {
   --font-sans: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --color-brand: #3956D7;
-  --color-brand-hover: #2e47bd;
+  --color-brand: #3654D6;
+  --color-brand-hover: #2b45b5;
 }
 
 :root {
   --background: #f8fafc;
   --foreground: #0f172a;
-  --primary: #3956D7;
+  --primary: #3654D6;
   --font-sans: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
