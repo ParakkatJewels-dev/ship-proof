@@ -160,22 +160,6 @@ export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
               </button>
             </div>
 
-            {/* Quick Demo Fill */}
-            <div className="pt-1 flex items-center justify-between text-xs text-zinc-500">
-              <span>Demo credentials ready</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setAdminEmail("admin@shipproof.com");
-                  setAdminPassword("admin123");
-                  handleSubmit();
-                }}
-                className="text-[#3654D6] font-semibold hover:underline cursor-pointer"
-              >
-                ⚡ 1-Click Fast Fill
-              </button>
-            </div>
-
           </form>
 
         </div>

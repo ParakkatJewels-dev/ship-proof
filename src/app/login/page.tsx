@@ -145,34 +145,7 @@ export default function LoginPage() {
               </button>
             </div>
 
-            {/* Quick Demo Fill */}
-            <div className="pt-1 flex items-center justify-between text-xs text-zinc-500">
-              <span>Demo credentials ready</span>
-              <button
-                type="button"
-                onClick={() => {
-                  setAdminEmail("admin@shipproof.com");
-                  setAdminPassword("admin123");
-                  handleLogin();
-                }}
-                className="text-[#3654D6] font-semibold hover:underline cursor-pointer"
-              >
-                ⚡ 1-Click Fast Fill
-              </button>
-            </div>
-
           </form>
-
-          {/* Return link */}
-          <div className="text-center pt-2">
-            <Link
-              href="/"
-              className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors inline-flex items-center space-x-1"
-            >
-              <span>←</span>
-              <span>Return to Dashboard</span>
-            </Link>
-          </div>
 
         </div>
 
