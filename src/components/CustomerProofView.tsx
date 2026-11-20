@@ -21,7 +21,7 @@ export function CustomerProofView() {
       <div className="bg-white rounded-2xl p-6 border border-zinc-200 shadow-sm space-y-4">
         <div className="aspect-video bg-zinc-950 rounded-xl overflow-hidden flex items-center justify-center relative shadow-inner">
           <div className="text-center text-white z-10">
-            <div className="w-16 h-16 rounded-full bg-[#3154D6] hover:bg-[#2544ba] cursor-pointer flex items-center justify-center text-2xl mx-auto mb-3 shadow-lg shadow-[#3154D6]/30 transition-transform hover:scale-105">
+            <div className="w-16 h-16 rounded-full bg-[#3956D7] hover:bg-[#2e47bd] cursor-pointer flex items-center justify-center text-2xl mx-auto mb-3 shadow-lg shadow-[#3956D7]/30 transition-transform hover:scale-105">
               ▶
             </div>
             <p className="text-sm font-bold">Watch Your Order Packing Video</p>

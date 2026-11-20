@@ -79,8 +79,8 @@ export function LoginModal({ isOpen, onClose, onLogin, selectedStation }: LoginM
           ✕
         </button>
 
-        {/* ================= LEFT COLUMN: BRANDING (BRIGHT BLUE #3154D6) ================= */}
-        <div className="md:col-span-5 bg-[#3154D6] p-8 sm:p-10 flex flex-col justify-between items-center text-center relative overflow-hidden text-white min-h-[360px] md:min-h-[560px]">
+        {/* ================= LEFT COLUMN: BRANDING (BRIGHT BLUE #3956D7) ================= */}
+        <div className="md:col-span-5 bg-[#3956D7] p-8 sm:p-10 flex flex-col justify-between items-center text-center relative overflow-hidden text-white min-h-[360px] md:min-h-[560px]">
 
           {/* Sparkles */}
           <div className="absolute top-8 left-10 text-emerald-200 text-lg opacity-90 animate-pulse">✦</div>
@@ -159,14 +159,14 @@ export function LoginModal({ isOpen, onClose, onLogin, selectedStation }: LoginM
                         setError(null);
                       }}
                       className={`p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${role === "packer"
-                        ? "bg-[#eef3ff] border-2 border-[#3154D6] text-[#3154D6] font-bold shadow-sm"
+                        ? "bg-[#eef3ff] border-2 border-[#3956D7] text-[#3956D7] font-bold shadow-sm"
                         : "bg-zinc-50 hover:bg-zinc-100 border-zinc-200 text-zinc-700"
                         }`}
                     >
                       <div className="flex items-center space-x-3">
                         <div
                           className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${role === "packer"
-                            ? "bg-[#3154D6] text-white text-xs font-bold"
+                            ? "bg-[#3956D7] text-white text-xs font-bold"
                             : "border-2 border-zinc-300 bg-white"
                             }`}
                         >
@@ -185,14 +185,14 @@ export function LoginModal({ isOpen, onClose, onLogin, selectedStation }: LoginM
                         setError(null);
                       }}
                       className={`p-3.5 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${role === "admin"
-                        ? "bg-[#eef3ff] border-2 border-[#3154D6] text-[#3154D6] font-bold shadow-sm"
+                        ? "bg-[#eef3ff] border-2 border-[#3956D7] text-[#3956D7] font-bold shadow-sm"
                         : "bg-zinc-50 hover:bg-zinc-100 border-zinc-200 text-zinc-700"
                         }`}
                     >
                       <div className="flex items-center space-x-3">
                         <div
                           className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${role === "admin"
-                            ? "bg-[#3154D6] text-white text-xs font-bold"
+                            ? "bg-[#3956D7] text-white text-xs font-bold"
                             : "border-2 border-zinc-300 bg-white"
                             }`}
                         >
@@ -221,13 +221,13 @@ export function LoginModal({ isOpen, onClose, onLogin, selectedStation }: LoginM
                           onChange={(e) => setPackerName(e.target.value)}
                           placeholder="Full name or Employee ID"
                           required
-                          className="w-full text-xs font-medium px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:border-[#3154D6] focus:ring-2 focus:ring-[#3154D6]/20 transition-all shadow-sm"
+                          className="w-full text-xs font-medium px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:border-[#3956D7] focus:ring-2 focus:ring-[#3956D7]/20 transition-all shadow-sm"
                         />
 
                         <select
                           value={stationBay}
                           onChange={(e) => setStationBay(e.target.value)}
-                          className="w-full text-xs font-semibold px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 focus:bg-white focus:outline-none focus:border-[#3154D6] focus:ring-2 focus:ring-[#3154D6]/20 transition-all shadow-sm cursor-pointer"
+                          className="w-full text-xs font-semibold px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 focus:bg-white focus:outline-none focus:border-[#3956D7] focus:ring-2 focus:ring-[#3956D7]/20 transition-all shadow-sm cursor-pointer"
                         >
                           <option value="STATION-01">Bay 1 • Bengaluru Warehouse (Logitech 1080p)</option>
                           <option value="STATION-02">Bay 2 • Bengaluru Warehouse (RTSP Cam 02)</option>
@@ -240,7 +240,7 @@ export function LoginModal({ isOpen, onClose, onLogin, selectedStation }: LoginM
                           onChange={(e) => setPackerPin(e.target.value)}
                           placeholder="Security PIN (e.g. 1234)"
                           required
-                          className="w-full text-xs font-mono px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:border-[#3154D6] focus:ring-2 focus:ring-[#3154D6]/20 transition-all shadow-sm"
+                          className="w-full text-xs font-mono px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:border-[#3956D7] focus:ring-2 focus:ring-[#3956D7]/20 transition-all shadow-sm"
                         />
                       </>
                     ) : (
@@ -251,7 +251,7 @@ export function LoginModal({ isOpen, onClose, onLogin, selectedStation }: LoginM
                           onChange={(e) => setAdminEmail(e.target.value)}
                           placeholder="Admin Email (e.g. admin@shipproof.com)"
                           required
-                          className="w-full text-xs font-medium px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:border-[#3154D6] focus:ring-2 focus:ring-[#3154D6]/20 transition-all shadow-sm"
+                          className="w-full text-xs font-medium px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:border-[#3956D7] focus:ring-2 focus:ring-[#3956D7]/20 transition-all shadow-sm"
                         />
 
                         <input
@@ -260,7 +260,7 @@ export function LoginModal({ isOpen, onClose, onLogin, selectedStation }: LoginM
                           onChange={(e) => setAdminPassword(e.target.value)}
                           placeholder="Password (e.g. admin123)"
                           required
-                          className="w-full text-xs font-mono px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:border-[#3154D6] focus:ring-2 focus:ring-[#3154D6]/20 transition-all shadow-sm"
+                          className="w-full text-xs font-mono px-4 py-3.5 rounded-xl bg-zinc-50 border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:bg-white focus:outline-none focus:border-[#3956D7] focus:ring-2 focus:ring-[#3956D7]/20 transition-all shadow-sm"
                         />
                       </>
                     )}
@@ -272,7 +272,7 @@ export function LoginModal({ isOpen, onClose, onLogin, selectedStation }: LoginM
                   <button
                     type="submit"
                     disabled={loading}
-                    className="w-full py-4 px-4 rounded-xl bg-[#3154D6] hover:bg-[#2544ba] text-white font-extrabold text-sm shadow-lg shadow-[#3154D6]/25 transition-all cursor-pointer flex items-center justify-center space-x-2 active:scale-[0.99]"
+                    className="w-full py-4 px-4 rounded-xl bg-[#3956D7] hover:bg-[#2e47bd] text-white font-extrabold text-sm shadow-lg shadow-[#3956D7]/25 transition-all cursor-pointer flex items-center justify-center space-x-2 active:scale-[0.99]"
                   >
                     <span>{loading ? "Authenticating..." : role === "packer" ? "Access Packing Bay" : "Open Admin Console"}</span>
                     <span>→</span>
@@ -285,7 +285,7 @@ export function LoginModal({ isOpen, onClose, onLogin, selectedStation }: LoginM
                   <button
                     type="button"
                     onClick={() => handleSubmit()}
-                    className="text-[#3154D6] font-bold hover:underline cursor-pointer"
+                    className="text-[#3956D7] font-bold hover:underline cursor-pointer"
                   >
                     ⚡ 1-Click Fast Fill
                   </button>
