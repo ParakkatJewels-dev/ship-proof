@@ -79,30 +79,37 @@ export function LoginModal({ isOpen, onClose, onLogin, selectedStation }: LoginM
           ✕
         </button>
 
-          {/* ================= LEFT COLUMN: BRANDING (SOLID BLUE #3654D6) ================= */}
-          <div className="md:col-span-5 bg-[#3654D6] p-8 sm:p-10 flex flex-col justify-between items-center text-center relative text-white min-h-[360px] md:min-h-[520px]">
+        {/* ================= LEFT COLUMN: BRANDING (SOLID BLUE #3654D6) ================= */}
+        <div className="md:col-span-5 bg-[#3654D6] p-6 sm:p-8 flex flex-col items-center justify-center text-center relative text-white min-h-[360px] md:min-h-[520px]">
 
-              {/* Top Logo */}
-              <div className="w-full flex items-center justify-start space-x-2.5 z-10">
-                <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center font-bold text-white text-sm border border-white/30 shadow-sm">
+          {/* Center Graphic: Large Packing Illustration */}
+          <div className="my-auto py-4 flex flex-col items-center justify-center text-center z-10 w-full max-w-[320px]">
+            <div className="relative w-full flex items-center justify-center">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/packing-illustration.jpg"
+                alt="ShipProof Order Packing Station Illustration"
+                className="w-full h-auto max-h-[320px] object-contain rounded-xl select-none"
+              />
+            </div>
+
+            {/* ShipProof text below the image */}
+            <div className="mt-4 text-center">
+              <div className="inline-flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center font-extrabold text-white text-xs border border-white/30 shadow-sm">
                   SP
                 </div>
-                <span className="font-extrabold text-lg tracking-tight text-white">ShipProof</span>
+                <span className="font-extrabold text-2xl tracking-tight text-white block leading-tight">
+                  ShipProof
+                </span>
               </div>
+              <p className="text-[11px] font-medium text-blue-100/90 tracking-wider uppercase mt-1">
+                Order Packing Video Verification
+              </p>
+            </div>
+          </div>
 
-                {/* Center Graphic */}
-                <div className="my-auto py-6 flex flex-col items-center justify-center text-center z-10 w-full max-w-[280px]">
-                  <div className="relative w-full flex items-center justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/packing-illustration.jpg"
-                      alt="Order Packing Station Illustration"
-                      className="w-full h-auto max-h-[280px] object-contain rounded-xl select-none"
-                    />
-                  </div>
-                </div>
-
-              </div>
+        </div>
 
             {/* ================= RIGHT COLUMN: LOGIN SECTION (PURE WHITE #FFFFFF) ================= */}
             <div className="md:col-span-7 p-8 sm:p-12 flex flex-col justify-center bg-white text-zinc-900">

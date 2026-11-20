@@ -68,36 +68,36 @@ export default function LoginPage() {
   return (
     <div className="h-screen w-full grid grid-cols-1 lg:grid-cols-2 font-sans bg-white m-0 p-0 overflow-hidden">
       
-      {/* ================= LEFT SECTION: BRANDING & ILLUSTRATION (SOLID BLUE #3654D6) ================= */}
-      <section className="bg-[#3654D6] text-white flex flex-col justify-between p-6 sm:p-10 lg:p-12 h-full overflow-hidden relative select-none">
+      {/* ================= LEFT SECTION: BRANDING & ENLARGED ILLUSTRATION (SOLID BLUE #3654D6) ================= */}
+      <section className="bg-[#3654D6] text-white flex flex-col items-center justify-center p-6 sm:p-10 lg:p-12 h-full overflow-hidden relative select-none">
         
-        {/* Top Header / Brand Logo */}
-        <div className="w-full flex items-center justify-between z-10 shrink-0">
-          <Link href="/" className="inline-flex items-center space-x-3 group">
-            <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center font-extrabold text-white text-base border border-white/30 shadow-sm group-hover:scale-105 transition-transform">
-              SP
-            </div>
-            <div>
-              <span className="font-extrabold text-2xl tracking-tight text-white block leading-tight">ShipProof</span>
-              <span className="text-[11px] font-semibold text-blue-100 tracking-wide uppercase">Order Packing Verification</span>
-            </div>
-          </Link>
-
-          <span className="text-xs font-semibold px-3 py-1 rounded-full bg-white/15 border border-white/25 text-white/90 backdrop-blur-sm hidden sm:inline-block">
-            Enterprise v1.0
-          </span>
-        </div>
-
-        {/* Center Graphic: Packing Worker Illustration */}
-        <div className="my-auto py-4 flex flex-col items-center justify-center text-center z-10 w-full max-w-lg mx-auto flex-1 min-h-0">
-          <div className="relative w-full max-w-[280px] sm:max-w-[360px] lg:max-w-[420px] h-full flex items-center justify-center">
+        <div className="flex flex-col items-center justify-center text-center my-auto w-full max-w-xl">
+          
+          {/* Enlarged Packing Worker Illustration */}
+          <div className="relative w-full max-w-[340px] sm:max-w-[440px] lg:max-w-[520px] xl:max-w-[580px] flex items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/packing-illustration.jpg"
-              alt="Order Packing Station Illustration"
-              className="w-full h-auto max-h-[380px] lg:max-h-[500px] object-contain rounded-2xl select-none"
+              alt="ShipProof Order Packing Station Illustration"
+              className="w-full h-auto max-h-[58vh] sm:max-h-[64vh] lg:max-h-[70vh] object-contain rounded-2xl select-none"
             />
           </div>
+
+          {/* ShipProof Text Below The Image */}
+          <div className="mt-4 sm:mt-5 text-center">
+            <Link href="/" className="inline-flex items-center space-x-3 group">
+              <div className="w-9 h-9 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center font-extrabold text-white text-sm border border-white/30 shadow-sm group-hover:scale-105 transition-transform">
+                SP
+              </div>
+              <span className="font-extrabold text-2xl sm:text-3xl lg:text-4xl tracking-tight text-white block leading-tight">
+                ShipProof
+              </span>
+            </Link>
+            <p className="text-xs sm:text-sm font-medium text-blue-100/90 tracking-wider uppercase mt-1">
+              Order Packing Video Verification
+            </p>
+          </div>
+
         </div>
 
       </section>
