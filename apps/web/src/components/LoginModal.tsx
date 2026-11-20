@@ -101,81 +101,81 @@ export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
         {/* ================= RIGHT COLUMN: LOGIN SECTION (GREY SHADE CARD ON WHITE BG) ================= */}
         <div className="md:col-span-7 p-6 sm:p-10 flex flex-col justify-center bg-white text-zinc-900">
 
-          <div className="w-full max-w-[420px] sm:max-w-[460px] mx-auto my-auto bg-[#F4F5F7] rounded-none p-8 sm:p-10 border border-zinc-200/90 space-y-6">
+            <div className="w-full max-w-[420px] sm:max-w-[460px] mx-auto my-auto bg-[#F4F5F7] rounded-2xl p-8 sm:p-10 border border-zinc-200/90 space-y-6">
 
-            {/* Logo in Card Center */}
-            <div className="flex justify-center -mb-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/logo.jpg"
-                alt="ShipProof Logo"
-                className="w-16 h-16 sm:w-20 sm:h-20 object-contain mx-auto mix-blend-multiply select-none"
-              />
-            </div>
-
-            {/* Main Heading */}
-            <div className="text-center">
-              <h1 className="text-xl sm:text-2xl font-extrabold text-zinc-900 tracking-tight leading-[1.2]">
-                Sign in to our<br />packing portal today
-              </h1>
-            </div>
-
-            {error && (
-              <div className="p-2.5 rounded-none bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
-                {error}
+              {/* Logo in Card Center */}
+              <div className="flex justify-center -mb-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/logo.jpg"
+                  alt="ShipProof Logo"
+                  className="w-16 h-16 sm:w-20 sm:h-20 object-contain mx-auto mix-blend-multiply select-none"
+                />
               </div>
+
+              {/* Main Heading */}
+              <div className="text-center">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-zinc-900 tracking-tight leading-[1.2]">
+                  Sign in to our<br />packing portal today
+                </h1>
+              </div>
+
+              {error && (
+                  <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
+                    {error}
+                  </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+                  <form onSubmit={handleSubmit} className="space-y-4">
 
-              {/* Email Field */}
-              <div>
-                <label className="block text-sm sm:text-[15px] font-semibold text-zinc-800 mb-2">
-                  Email id
-                </label>
-                <input
-                  type="email"
-                  value={adminEmail}
-                  onChange={(e) => setAdminEmail(e.target.value)}
-                  placeholder="Enter your Email"
-                  required
-                  className="w-full text-sm sm:text-base px-4 py-3 rounded-none bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 placeholder:text-sm sm:placeholder:text-[15px] focus:outline-none focus:border-[#3654D6] transition-colors"
-                />
-              </div>
+                    {/* Email Field */}
+                    <div>
+                      <label className="block text-sm sm:text-[15px] font-semibold text-zinc-800 mb-2">
+                        Email id
+                      </label>
+                      <input
+                        type="email"
+                        value={adminEmail}
+                        onChange={(e) => setAdminEmail(e.target.value)}
+                        placeholder="Enter your Email"
+                        required
+                        className="w-full text-sm sm:text-base px-4 py-3 rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 placeholder:text-sm sm:placeholder:text-[15px] focus:outline-none focus:border-[#3654D6] transition-colors"
+                      />
+                    </div>
 
-              {/* Password Field */}
-              <div>
-                <label className="block text-sm sm:text-[15px] font-semibold text-zinc-800 mb-2">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  placeholder="Enter your password"
-                  required
-                  className="w-full text-sm sm:text-base px-4 py-3 rounded-none bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 placeholder:text-sm sm:placeholder:text-[15px] focus:outline-none focus:border-[#3654D6] transition-colors"
-                />
-              </div>
+                    {/* Password Field */}
+                    <div>
+                      <label className="block text-sm sm:text-[15px] font-semibold text-zinc-800 mb-2">
+                        Password
+                      </label>
+                      <input
+                        type="password"
+                        value={adminPassword}
+                        onChange={(e) => setAdminPassword(e.target.value)}
+                        placeholder="Enter your password"
+                        required
+                        className="w-full text-sm sm:text-base px-4 py-3 rounded-xl bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 placeholder:text-sm sm:placeholder:text-[15px] focus:outline-none focus:border-[#3654D6] transition-colors"
+                      />
+                    </div>
 
-              {/* Primary Action Button */}
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-3 px-4 rounded-none bg-[#3654D6] hover:bg-[#2b45b5] text-white font-semibold text-sm sm:text-base transition-colors cursor-pointer text-center disabled:opacity-70"
-                >
-                  {loading ? "Signing in..." : "Sign in to portal"}
-                </button>
-              </div>
+                    {/* Primary Action Button */}
+                    <div className="pt-2">
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full py-3 px-4 rounded-xl bg-[#3654D6] hover:bg-[#2b45b5] text-white font-semibold text-sm sm:text-base transition-colors cursor-pointer text-center disabled:opacity-70"
+                      >
+                        {loading ? "Signing in..." : "Sign in to portal"}
+                      </button>
+                    </div>
 
-            </form>
+                  </form>
 
-          </div>
+                </div>
 
         </div>
 
-      </div>
-    </div>
-  );
+          </div>
+        </div>
+        );
 }
