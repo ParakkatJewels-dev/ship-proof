@@ -97,37 +97,40 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-3.5">
 
-            {/* Section: About yourself */}
+            {/* Email Field */}
             <div>
-              <label className="block text-xs font-bold text-zinc-800 mb-2">
-                About yourself
+              <label className="block text-xs font-semibold text-zinc-800 mb-1.5">
+                Email id
               </label>
+              <input
+                type="email"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                placeholder="Enter your Email"
+                required
+                className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-lg bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#3654D6] transition-colors"
+              />
+            </div>
 
-              <div className="space-y-2">
-                <input
-                  type="email"
-                  value={adminEmail}
-                  onChange={(e) => setAdminEmail(e.target.value)}
-                  placeholder="Email"
-                  required
-                  className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-lg bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#3654D6] transition-colors"
-                />
-
-                <input
-                  type="password"
-                  value={adminPassword}
-                  onChange={(e) => setAdminPassword(e.target.value)}
-                  placeholder="Password"
-                  required
-                  className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-lg bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#3654D6] transition-colors"
-                />
-              </div>
+            {/* Password Field */}
+            <div>
+              <label className="block text-xs font-semibold text-zinc-800 mb-1.5">
+                Password
+              </label>
+              <input
+                type="password"
+                value={adminPassword}
+                onChange={(e) => setAdminPassword(e.target.value)}
+                placeholder="Enter your password"
+                required
+                className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-lg bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#3654D6] transition-colors"
+              />
             </div>
 
             {/* Primary Action Button (Blue #3654D6) */}
-            <div className="pt-1">
+            <div className="pt-1.5">
               <button
                 type="submit"
                 disabled={loading}
