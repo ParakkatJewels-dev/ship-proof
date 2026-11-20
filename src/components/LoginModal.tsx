@@ -98,10 +98,10 @@ export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
 
         </div>
 
-        {/* ================= RIGHT COLUMN: LOGIN SECTION (MATCHING REFERENCE DESIGN) ================= */}
-        <div className="md:col-span-7 p-8 sm:p-12 flex flex-col justify-center bg-white text-zinc-900">
+        {/* ================= RIGHT COLUMN: LOGIN SECTION (GREY SHADE CARD ON WHITE BG) ================= */}
+        <div className="md:col-span-7 p-6 sm:p-10 flex flex-col justify-center bg-white text-zinc-900">
 
-          <div className="w-full max-w-[340px] sm:max-w-[380px] mx-auto my-auto space-y-6">
+          <div className="w-full max-w-[360px] sm:max-w-[400px] mx-auto my-auto bg-[#F4F5F7] rounded-2xl p-6 sm:p-8 border border-zinc-200/90 space-y-6">
 
             {/* Main Heading */}
             <div>
