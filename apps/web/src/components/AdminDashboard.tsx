@@ -2,8 +2,22 @@
 
 import React, { useState } from "react";
 
+interface VideoItem {
+  id: string;
+  orderNumber: string;
+  customer: string;
+  packer: string;
+  station: string;
+  duration: string;
+  size: string;
+  deliveredAt: string;
+  expiryDate: string;
+  status: string;
+  daysRemaining: number;
+}
+
 export function AdminDashboard() {
-  const [selectedVideo, setSelectedVideo] = useState<any | null>(null);
+  const [selectedVideo, setSelectedVideo] = useState<VideoItem | null>(null);
 
   const stations = [
     {
@@ -146,13 +160,12 @@ export function AdminDashboard() {
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-sm text-zinc-900">{st.id}</span>
                   <span
-                    className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                      st.status === "ONLINE"
+                    className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${st.status === "ONLINE"
                         ? "bg-emerald-100 text-emerald-800"
                         : st.status === "BUSY"
-                        ? "bg-amber-100 text-amber-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
+                          ? "bg-amber-100 text-amber-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
                   >
                     {st.status}
                   </span>

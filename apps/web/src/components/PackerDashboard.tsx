@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 interface OrderItem {
   id: string;
@@ -23,37 +23,52 @@ interface OrderData {
   items: OrderItem[];
 }
 
+const DEFAULT_DEMO_ORDER: OrderData = {
+  id: "order-uuid-1042",
+  orderNumber: "#1042",
+  customerName: "Rohan Sharma",
+  customerEmail: "rohan.sharma@example.com",
+  currency: "INR",
+  totalPrice: "4,999.00",
+  items: [
+    {
+      id: "item-1",
+      sku: "PJ-GLD-RNG-01",
+      title: "22K Gold Filigree Ring",
+      variantTitle: "Size 14",
+      quantity: 1,
+      price: "3,499.00",
+      imageUrl: "https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=300",
+      verified: true,
+    },
+    {
+      id: "item-2",
+      sku: "PJ-SIL-CHN-05",
+      title: "Sterling Silver Box Chain",
+      variantTitle: "18 Inch",
+      quantity: 1,
+      price: "1,500.00",
+      imageUrl: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=300",
+      verified: false,
+    },
+  ],
+};
+
 export function PackerDashboard({ selectedStation }: { selectedStation: string }) {
   const [searchQuery, setSearchQuery] = useState("#1042");
-  const [order, setOrder] = useState<OrderData | null>(null);
+  const [order, setOrder] = useState<OrderData | null>(DEFAULT_DEMO_ORDER);
   const [loading, setLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordSeconds, setRecordSeconds] = useState(0);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [uploadedVideoUrl, setUploadedVideoUrl] = useState<string | null>(null);
 
-  // Demo initial order
-  useEffect(() => {
-    fetchOrder("#1042");
-  }, []);
-
-  // Timer counter when recording
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (isRecording) {
-      timer = setInterval(() => setRecordSeconds((s) => s + 1), 1000);
-    } else {
-      setRecordSeconds(0);
-    }
-    return () => clearInterval(timer);
-  }, [isRecording]);
-
-  const fetchOrder = (orderNum: string) => {
+  const fetchOrder = useCallback((orderNum: string) => {
     setLoading(true);
     setUploadedVideoUrl(null);
     setTimeout(() => {
       setOrder({
-        id: "order-uuid-1042",
+        id: `order-uuid-${orderNum.replace(/\D/g, "") || "custom"}`,
         orderNumber: orderNum.startsWith("#") ? orderNum : `#${orderNum}`,
         customerName: "Rohan Sharma",
         customerEmail: "rohan.sharma@example.com",
@@ -84,7 +99,14 @@ export function PackerDashboard({ selectedStation }: { selectedStation: string }
       });
       setLoading(false);
     }, 300);
-  };
+  }, []);
+
+  // Timer counter when recording
+  useEffect(() => {
+    if (!isRecording) return;
+    const timer = setInterval(() => setRecordSeconds((s) => s + 1), 1000);
+    return () => clearInterval(timer);
+  }, [isRecording]);
 
   const toggleItemVerify = (id: string) => {
     if (!order) return;
@@ -95,6 +117,7 @@ export function PackerDashboard({ selectedStation }: { selectedStation: string }
   };
 
   const startRecording = () => {
+    setRecordSeconds(0);
     setIsRecording(true);
     setUploadedVideoUrl(null);
   };
@@ -195,6 +218,7 @@ export function PackerDashboard({ selectedStation }: { selectedStation: string }
                     }`}
                   >
                     <div className="flex items-center space-x-3.5">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={item.imageUrl}
                         alt={item.title}
