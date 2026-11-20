@@ -83,14 +83,14 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* ShipProof Signature Calligraphy Text Below The Image */}
-          <div className="mt-3 sm:mt-4 text-center">
+          {/* ShipProof Text Below The Image */}
+          <div className="mt-2.5 sm:mt-3 text-center">
             <Link href="/" className="inline-block group">
-              <span className="font-calligraphy font-bold text-5xl sm:text-6xl lg:text-7xl text-white block leading-tight tracking-wide group-hover:scale-105 transition-transform drop-shadow-sm">
+              <span className="font-calligraphy text-3xl sm:text-4xl lg:text-5xl text-white block leading-tight tracking-wide group-hover:scale-105 transition-transform drop-shadow-sm">
                 ShipProof
               </span>
             </Link>
-            <p className="text-xs sm:text-sm font-medium text-blue-100/90 tracking-widest uppercase mt-1">
+            <p className="text-[11px] sm:text-xs font-medium text-blue-100/80 tracking-widest uppercase mt-0.5">
               Order Packing Video Verification
             </p>
           </div>
