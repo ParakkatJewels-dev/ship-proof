@@ -98,80 +98,68 @@ export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
 
         </div>
 
-        {/* ================= RIGHT COLUMN: LOGIN SECTION (FLAT GREY CARD ON WHITE BG) ================= */}
+        {/* ================= RIGHT COLUMN: LOGIN SECTION (GREY SHADE CARD ON WHITE BG) ================= */}
         <div className="md:col-span-7 p-6 sm:p-10 flex flex-col justify-center bg-white text-zinc-900">
 
-          <div className="w-full max-w-[360px] sm:max-w-[400px] mx-auto my-auto space-y-4">
+          <div className="w-full max-w-[360px] sm:max-w-[400px] mx-auto my-auto bg-[#F4F5F7] rounded-2xl p-6 sm:p-8 border border-zinc-200/90 space-y-6">
 
-            {/* Main Heading (Placed outside the card) */}
+            {/* Main Heading */}
             <div>
               <h1 className="text-2xl sm:text-[30px] font-extrabold text-zinc-900 tracking-tight leading-[1.15]">
                 Sign in to our<br />packing portal today
               </h1>
             </div>
 
-            {/* Card (Grey background, straight edges, no shadow) */}
-            <div className="bg-[#F4F5F7] p-6 sm:p-8 border border-zinc-200/90 space-y-5 rounded-none">
+            {error && (
+              <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
+                {error}
+              </div>
+            )}
 
-              {/* Centered Sign In text inside the card */}
-              <div className="text-center">
-                <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 tracking-tight">
-                  Sign in
-                </h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+
+              {/* Email Field */}
+              <div>
+                <label className="block text-sm sm:text-[15px] font-semibold text-zinc-800 mb-2">
+                  Email id
+                </label>
+                <input
+                  type="email"
+                  value={adminEmail}
+                  onChange={(e) => setAdminEmail(e.target.value)}
+                  placeholder="Enter your Email"
+                  required
+                  className="w-full text-sm sm:text-base px-4 py-3 rounded-lg bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 placeholder:text-sm sm:placeholder:text-[15px] focus:outline-none focus:border-[#3654D6] transition-colors"
+                />
               </div>
 
-              {error && (
-                <div className="p-2.5 bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
-                  {error}
-                </div>
-              )}
+              {/* Password Field */}
+              <div>
+                <label className="block text-sm sm:text-[15px] font-semibold text-zinc-800 mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  required
+                  className="w-full text-sm sm:text-base px-4 py-3 rounded-lg bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 placeholder:text-sm sm:placeholder:text-[15px] focus:outline-none focus:border-[#3654D6] transition-colors"
+                />
+              </div>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Primary Action Button */}
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 px-4 rounded-lg bg-[#3654D6] hover:bg-[#2b45b5] text-white font-semibold text-sm sm:text-base transition-colors cursor-pointer text-center disabled:opacity-70"
+                >
+                  {loading ? "Signing in..." : "Sign in to portal"}
+                </button>
+              </div>
 
-                {/* Email Field */}
-                <div>
-                  <label className="block text-sm sm:text-[15px] font-semibold text-zinc-800 mb-2">
-                    Email id
-                  </label>
-                  <input
-                    type="email"
-                    value={adminEmail}
-                    onChange={(e) => setAdminEmail(e.target.value)}
-                    placeholder="Enter your Email"
-                    required
-                    className="w-full text-sm sm:text-base px-4 py-3 rounded-none bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 placeholder:text-sm sm:placeholder:text-[15px] focus:outline-none focus:border-[#3654D6] transition-colors"
-                  />
-                </div>
-
-                {/* Password Field */}
-                <div>
-                  <label className="block text-sm sm:text-[15px] font-semibold text-zinc-800 mb-2">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    value={adminPassword}
-                    onChange={(e) => setAdminPassword(e.target.value)}
-                    placeholder="Enter your password"
-                    required
-                    className="w-full text-sm sm:text-base px-4 py-3 rounded-none bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 placeholder:text-sm sm:placeholder:text-[15px] focus:outline-none focus:border-[#3654D6] transition-colors"
-                  />
-                </div>
-
-                {/* Primary Action Button */}
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-3 px-4 rounded-none bg-[#3654D6] hover:bg-[#2b45b5] text-white font-semibold text-sm sm:text-base transition-colors cursor-pointer text-center disabled:opacity-70"
-                  >
-                    {loading ? "Signing in..." : "Sign in to portal"}
-                  </button>
-                </div>
-
-              </form>
-
-            </div>
+            </form>
 
           </div>
 
