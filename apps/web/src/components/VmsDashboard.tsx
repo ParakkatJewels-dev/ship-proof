@@ -35,25 +35,25 @@ const INITIAL_ORDERS: OrderRecord[] = [
     placedTime: "2:34 PM",
     placedDate: "20 Nov 2026",
     status: "Pending",
-    thumbnailUrl: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=150&auto=format&fit=crop&q=80",
+    thumbnailUrl: "/item-sneaker.jpg",
     items: [
       {
         id: "itm-1",
         name: "White Sneakers",
         quantity: 1,
-        imageUrl: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=200&auto=format&fit=crop&q=80",
+        imageUrl: "/item-sneaker.jpg",
       },
       {
         id: "itm-2",
         name: "Black Classic T-Shirt",
         quantity: 1,
-        imageUrl: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=200&auto=format&fit=crop&q=80",
+        imageUrl: "/item-tshirt.jpg",
       },
       {
         id: "itm-3",
         name: "Wireless Over-Ear Headphones",
         quantity: 1,
-        imageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&auto=format&fit=crop&q=80",
+        imageUrl: "/item-headphones.jpg",
       },
     ],
   },
@@ -73,7 +73,7 @@ const INITIAL_ORDERS: OrderRecord[] = [
         id: "itm-3",
         name: "Wireless Headphones",
         quantity: 1,
-        imageUrl: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=200&auto=format&fit=crop&q=80",
+        imageUrl: "/item-headphones.jpg",
       },
       {
         id: "itm-5",
@@ -111,7 +111,7 @@ const INITIAL_ORDERS: OrderRecord[] = [
         id: "itm-2",
         name: "Black Classic T-Shirt",
         quantity: 2,
-        imageUrl: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=200&auto=format&fit=crop&q=80",
+        imageUrl: "/item-tshirt.jpg",
       },
     ],
   },
@@ -157,7 +157,7 @@ const INITIAL_ORDERS: OrderRecord[] = [
         id: "itm-1",
         name: "White Sneakers",
         quantity: 1,
-        imageUrl: "https://images.unsplash.com/photo-1595950653106-6c9ebd614d3a?w=200&auto=format&fit=crop&q=80",
+        imageUrl: "/item-sneaker.jpg",
       },
     ],
   },
@@ -189,7 +189,7 @@ const INITIAL_ORDERS: OrderRecord[] = [
         id: "itm-2",
         name: "Black Classic T-Shirt",
         quantity: 2,
-        imageUrl: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?w=200&auto=format&fit=crop&q=80",
+        imageUrl: "/item-tshirt.jpg",
       },
     ],
   },
@@ -228,7 +228,6 @@ export function VmsDashboard() {
   const [isPaused, setIsPaused] = useState(false);
   const [recordDuration, setRecordDuration] = useState(74); // 01:14
   const [cameraMode, setCameraMode] = useState<"stream" | "webcam">("stream");
-  const [webcamAvailable, setWebcamAvailable] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Timer for recording
@@ -253,10 +252,9 @@ export function VmsDashboard() {
             videoRef.current.play();
           }
           setCameraMode("webcam");
-          setWebcamAvailable(true);
         }
       } catch (err) {
-        console.warn("Webcam access not granted, continuing with high-res bay stream.", err);
+        console.warn("Webcam access not granted, continuing with high-res stream.", err);
       }
     } else {
       if (videoRef.current && videoRef.current.srcObject) {
@@ -275,34 +273,34 @@ export function VmsDashboard() {
     return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   };
 
-  // Status Badge Helper
+  // Status Badge Helper matching reference screenshot colors
   const renderStatusBadge = (status: OrderRecord["status"]) => {
     switch (status) {
       case "Pending":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#FFF7ED] text-[#EA580C] border border-[#FFEDD5]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#EA580C]" />
             Pending
           </span>
         );
       case "Packing":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#EFF6FF] text-[#2563EB] border border-[#DBEAFE]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]" />
             Packing
           </span>
         );
       case "Packed":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#ECFDF5] text-[#059669] border border-[#D1FAE5]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#059669]" />
             Packed
           </span>
         );
       case "Dispatched":
         return (
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200/80">
-            <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#F5F3FF] text-[#7C3AED] border border-[#EDE9FE]">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#7C3AED]" />
             Dispatched
           </span>
         );
@@ -320,34 +318,31 @@ export function VmsDashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-[#F4F6FB] text-zinc-900 font-sans p-3 sm:p-5 lg:p-6 flex flex-col justify-between">
-      <div className="w-full max-w-[1680px] mx-auto flex flex-col lg:flex-row gap-5 items-start">
+    <div className="min-h-screen bg-[#F4F6FB] text-zinc-900 font-sans p-4 sm:p-5 lg:p-6 flex flex-col justify-between">
+      <div className="w-full max-w-[1640px] mx-auto flex flex-col lg:flex-row gap-5 items-start">
 
         {/* ================= COLUMN 1: LEFT SIDEBAR ================= */}
-        <aside className="w-full lg:w-[220px] shrink-0 flex flex-col justify-between self-stretch bg-transparent py-1">
+        <aside className="w-full lg:w-[200px] shrink-0 flex flex-col justify-between self-stretch bg-transparent py-1">
           <div className="space-y-6">
 
-            {/* Logo Brand: VMS / ShipProof */}
+            {/* Logo Brand: VMS */}
             <div className="flex items-center space-x-2.5 px-2">
-              <div className="w-9 h-9 rounded-xl bg-[#3654D6] flex items-center justify-center text-white shadow-md shadow-[#3654D6]/25">
-                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                  <path d="M12 3L2 19h5.5l4.5-8 4.5 8H22L12 3z" />
-                </svg>
-              </div>
-              <div className="flex items-baseline space-x-1">
-                <span className="text-xl font-extrabold text-zinc-900 tracking-tight">VMS</span>
-                <span className="text-[10px] font-bold text-[#3654D6] uppercase tracking-wider">Proof</span>
-              </div>
+              <svg className="w-8 h-8 shrink-0 text-[#5340FF]" viewBox="0 0 32 32" fill="none">
+                <path d="M5 8L16 26L20 18L11 8H5Z" fill="#5340FF" />
+                <path d="M16 26L27 8H21L14 20L16 26Z" fill="#7C6EFF" />
+              </svg>
+              <span className="text-2xl font-black text-zinc-900 tracking-tight">VMS</span>
             </div>
 
             {/* Navigation Menu */}
             <nav className="space-y-1.5">
               <button
                 onClick={() => setSidebarNav("Dashboard")}
-                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${sidebarNav === "Dashboard"
-                    ? "bg-[#3654D6]/10 text-[#3654D6] font-bold shadow-xs"
-                    : "text-zinc-600 hover:text-zinc-900 hover:bg-white/70"
-                  }`}
+                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                  sidebarNav === "Dashboard"
+                    ? "bg-[#EEF2FF] text-[#4F46E5] font-bold shadow-xs"
+                    : "text-zinc-600 hover:text-zinc-900 hover:bg-white/80"
+                }`}
               >
                 <svg className="w-4 h-4 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -357,10 +352,11 @@ export function VmsDashboard() {
 
               <button
                 onClick={() => setSidebarNav("Reports")}
-                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${sidebarNav === "Reports"
-                    ? "bg-[#3654D6]/10 text-[#3654D6] font-bold shadow-xs"
-                    : "text-zinc-600 hover:text-zinc-900 hover:bg-white/70"
-                  }`}
+                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                  sidebarNav === "Reports"
+                    ? "bg-[#EEF2FF] text-[#4F46E5] font-bold shadow-xs"
+                    : "text-zinc-600 hover:text-zinc-900 hover:bg-white/80"
+                }`}
               >
                 <svg className="w-4 h-4 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -370,10 +366,11 @@ export function VmsDashboard() {
 
               <button
                 onClick={() => setSidebarNav("Settings")}
-                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-2xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${sidebarNav === "Settings"
-                    ? "bg-[#3654D6]/10 text-[#3654D6] font-bold shadow-xs"
-                    : "text-zinc-600 hover:text-zinc-900 hover:bg-white/70"
-                  }`}
+                className={`w-full flex items-center space-x-3 px-3.5 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                  sidebarNav === "Settings"
+                    ? "bg-[#EEF2FF] text-[#4F46E5] font-bold shadow-xs"
+                    : "text-zinc-600 hover:text-zinc-900 hover:bg-white/80"
+                }`}
               >
                 <svg className="w-4 h-4 shrink-0 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -399,10 +396,10 @@ export function VmsDashboard() {
               </div>
             </div>
 
-            <div className="mt-2 text-center">
+            <div className="mt-2.5 text-center">
               <Link
                 href="/login"
-                className="text-[11px] font-semibold text-zinc-400 hover:text-[#3654D6] transition-colors"
+                className="text-[11px] font-semibold text-zinc-400 hover:text-[#4F46E5] transition-colors"
               >
                 Switch Account / Sign In →
               </Link>
@@ -411,7 +408,7 @@ export function VmsDashboard() {
         </aside>
 
         {/* ================= COLUMN 2: CENTER ORDERS & METRICS ================= */}
-        <main className="flex-1 min-w-0 space-y-5">
+        <main className="flex-1 min-w-0 space-y-4">
 
           {/* Top Search Pill Bar */}
           <div className="flex items-center justify-between gap-3 bg-white px-4 py-2.5 rounded-full border border-zinc-200/80 shadow-xs">
@@ -423,7 +420,7 @@ export function VmsDashboard() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search orders... (e.g. #10582)"
+                placeholder="Search orders...  (e.g. #10582)"
                 className="w-full text-xs sm:text-sm text-zinc-900 placeholder:text-zinc-400 bg-transparent focus:outline-none"
               />
             </div>
@@ -436,14 +433,14 @@ export function VmsDashboard() {
           </div>
 
           {/* Heading */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pt-1">
             <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight">
               Orders
             </h1>
             {!showRightPanel && (
               <button
                 onClick={() => setShowRightPanel(true)}
-                className="text-xs font-bold text-[#3654D6] hover:underline"
+                className="text-xs font-bold text-[#4F46E5] hover:underline"
               >
                 Show Order Details & Camera →
               </button>
@@ -455,7 +452,7 @@ export function VmsDashboard() {
 
             {/* Total Orders */}
             <div className="bg-white rounded-2xl p-4 border border-zinc-200/80 shadow-xs flex items-center space-x-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
+              <div className="w-11 h-11 rounded-2xl bg-[#EEF2FF] text-[#4F46E5] flex items-center justify-center shrink-0">
                 <svg className="w-5 h-5 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
@@ -468,7 +465,7 @@ export function VmsDashboard() {
 
             {/* Pending */}
             <div className="bg-white rounded-2xl p-4 border border-zinc-200/80 shadow-xs flex items-center space-x-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <div className="w-11 h-11 rounded-2xl bg-[#E0F2FE] text-[#0284C7] flex items-center justify-center shrink-0">
                 <svg className="w-5 h-5 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
                   <circle cx="12" cy="12" r="10" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
@@ -482,9 +479,9 @@ export function VmsDashboard() {
 
             {/* Packed */}
             <div className="bg-white rounded-2xl p-4 border border-zinc-200/80 shadow-xs flex items-center space-x-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                <svg className="w-5 h-5 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <div className="w-11 h-11 rounded-full bg-[#10B981] text-white flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 fill-none stroke-current" strokeWidth="2.5" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
               <div>
@@ -495,7 +492,7 @@ export function VmsDashboard() {
 
             {/* Dispatched */}
             <div className="bg-white rounded-2xl p-4 border border-zinc-200/80 shadow-xs flex items-center space-x-3.5">
-              <div className="w-11 h-11 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+              <div className="w-11 h-11 rounded-2xl bg-[#F5F3FF] text-[#7C3AED] flex items-center justify-center shrink-0">
                 <svg className="w-5 h-5 fill-none stroke-current" strokeWidth="2" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8h4l3 3v5a1 1 0 01-1 1h-2" />
@@ -513,37 +510,41 @@ export function VmsDashboard() {
           <div className="flex items-center space-x-2 overflow-x-auto pb-1">
             <button
               onClick={() => setFilterTab("All")}
-              className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${filterTab === "All"
-                  ? "bg-[#3654D6] text-white shadow-xs font-bold"
+              className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                filterTab === "All"
+                  ? "bg-[#4F46E5] text-white shadow-xs font-bold"
                   : "bg-white hover:bg-zinc-100 text-zinc-600 border border-zinc-200/80"
-                }`}
+              }`}
             >
               All (248)
             </button>
             <button
               onClick={() => setFilterTab("Pending")}
-              className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${filterTab === "Pending"
-                  ? "bg-[#3654D6] text-white shadow-xs font-bold"
+              className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                filterTab === "Pending"
+                  ? "bg-[#4F46E5] text-white shadow-xs font-bold"
                   : "bg-white hover:bg-zinc-100 text-zinc-600 border border-zinc-200/80"
-                }`}
+              }`}
             >
               Pending (64)
             </button>
             <button
               onClick={() => setFilterTab("Packed")}
-              className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${filterTab === "Packed"
-                  ? "bg-[#3654D6] text-white shadow-xs font-bold"
+              className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                filterTab === "Packed"
+                  ? "bg-[#4F46E5] text-white shadow-xs font-bold"
                   : "bg-white hover:bg-zinc-100 text-zinc-600 border border-zinc-200/80"
-                }`}
+              }`}
             >
               Packed (156)
             </button>
             <button
               onClick={() => setFilterTab("Dispatched")}
-              className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${filterTab === "Dispatched"
-                  ? "bg-[#3654D6] text-white shadow-xs font-bold"
+              className={`px-4 py-2 rounded-full text-xs font-semibold transition-all cursor-pointer ${
+                filterTab === "Dispatched"
+                  ? "bg-[#4F46E5] text-white shadow-xs font-bold"
                   : "bg-white hover:bg-zinc-100 text-zinc-600 border border-zinc-200/80"
-                }`}
+              }`}
             >
               Dispatched (28)
             </button>
@@ -573,10 +574,11 @@ export function VmsDashboard() {
                           setSelectedOrder(order);
                           setShowRightPanel(true);
                         }}
-                        className={`transition-colors cursor-pointer group ${isSelected
-                            ? "bg-[#EEF2FF] border-l-4 border-l-[#3654D6]"
+                        className={`transition-colors cursor-pointer group ${
+                          isSelected
+                            ? "bg-[#EEF2FF] border-l-4 border-l-[#4F46E5]"
                             : "hover:bg-zinc-50/80"
-                          }`}
+                        }`}
                       >
                         {/* Order & Thumbnail */}
                         <td className="py-3 px-4">
@@ -589,7 +591,7 @@ export function VmsDashboard() {
                                 className="w-full h-full object-cover"
                               />
                             </div>
-                            <span className="font-extrabold text-zinc-900 group-hover:text-[#3654D6] transition-colors">
+                            <span className="font-extrabold text-zinc-900 group-hover:text-[#4F46E5] transition-colors">
                               {order.orderNumber}
                             </span>
                           </div>
@@ -619,10 +621,11 @@ export function VmsDashboard() {
                         <td className="py-3 px-4 text-right">
                           <button
                             type="button"
-                            className={`w-7 h-7 rounded-full inline-flex items-center justify-center transition-transform ${isSelected
-                                ? "bg-[#3654D6] text-white shadow-xs"
+                            className={`w-7 h-7 rounded-full inline-flex items-center justify-center transition-transform ${
+                              isSelected
+                                ? "bg-[#4F46E5] text-white shadow-xs"
                                 : "bg-zinc-100 text-zinc-400 group-hover:text-zinc-700 group-hover:bg-zinc-200/70"
-                              }`}
+                            }`}
                           >
                             <svg className="w-3.5 h-3.5 stroke-current" fill="none" viewBox="0 0 24 24" strokeWidth="2.5">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
@@ -641,7 +644,7 @@ export function VmsDashboard() {
 
         {/* ================= COLUMN 3: RIGHT DETAIL & CAMERA PANEL ================= */}
         {showRightPanel && selectedOrder && (
-          <aside className="w-full lg:w-[410px] shrink-0 bg-white rounded-3xl p-5 sm:p-6 border border-zinc-200/80 shadow-xs space-y-5">
+          <aside className="w-full lg:w-[400px] shrink-0 bg-white rounded-3xl p-5 sm:p-6 border border-zinc-200/80 shadow-xs space-y-4">
 
             {/* Top Bar: Status Badge + Close Button */}
             <div className="flex items-center justify-between">
@@ -688,20 +691,20 @@ export function VmsDashboard() {
             </div>
 
             {/* Order Items Horizontal Row */}
-            <div className="space-y-3 pt-1">
+            <div className="space-y-2.5 pt-1">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <svg className="w-4 h-4 text-zinc-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                   </svg>
-                  <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-wider">
+                  <h3 className="text-xs font-bold text-zinc-900 tracking-wide">
                     Order Items ({selectedOrder.itemCount})
                   </h3>
                 </div>
                 <button
                   type="button"
                   onClick={() => alert(`Reviewing all ${selectedOrder.itemCount} items for ${selectedOrder.orderNumber}`)}
-                  className="text-xs font-bold text-[#3654D6] hover:underline flex items-center space-x-1 cursor-pointer"
+                  className="text-xs font-bold text-[#4F46E5] hover:underline flex items-center space-x-1 cursor-pointer"
                 >
                   <span>View Items</span>
                   <span>→</span>
@@ -712,7 +715,7 @@ export function VmsDashboard() {
               <div className="grid grid-cols-3 gap-2.5">
                 {selectedOrder.items.map((item) => (
                   <div key={item.id} className="flex flex-col items-center">
-                    <div className="w-full aspect-square rounded-2xl bg-zinc-50 border border-zinc-200/80 p-2 flex items-center justify-center overflow-hidden hover:scale-105 transition-transform">
+                    <div className="w-full aspect-square rounded-2xl bg-[#F8FAFC] border border-zinc-100 p-2 flex items-center justify-center overflow-hidden hover:scale-105 transition-transform">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={item.imageUrl}
@@ -729,7 +732,7 @@ export function VmsDashboard() {
             </div>
 
             {/* Packing Camera Section */}
-            <div className="space-y-3 pt-1">
+            <div className="space-y-2.5 pt-1">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <svg className="w-4 h-4 text-zinc-900" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -743,7 +746,7 @@ export function VmsDashboard() {
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={handleToggleWebcam}
-                    className="text-[10px] text-zinc-400 hover:text-[#3654D6] font-semibold underline cursor-pointer"
+                    className="text-[10px] text-zinc-400 hover:text-[#4F46E5] font-semibold underline cursor-pointer"
                     title="Switch camera"
                   >
                     {cameraMode === "stream" ? "Use Webcam" : "Use Stream"}
@@ -755,8 +758,8 @@ export function VmsDashboard() {
                 </div>
               </div>
 
-              {/* Viewfinder: Real / High-Res Packing Bay Feed */}
-              <div className="relative aspect-video rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-200 shadow-inner flex items-center justify-center">
+              {/* Viewfinder: Real Packing Bay Feed */}
+              <div className="relative aspect-[16/9.6] rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-200 shadow-inner flex items-center justify-center">
                 {cameraMode === "webcam" ? (
                   <video
                     ref={videoRef}
@@ -767,15 +770,14 @@ export function VmsDashboard() {
                   />
                 ) : (
                   <>
-                    {/* Simulated High-Resolution Packing Desk Video */}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src="/packing-illustration.jpg"
+                      src="/camera-feed.jpg"
                       alt="Warehouse Packing Station Camera Feed"
-                      className={`w-full h-full object-cover transition-opacity duration-300 ${isPaused ? "opacity-60" : "opacity-95"
-                        }`}
+                      className={`w-full h-full object-cover transition-opacity duration-300 ${
+                        isPaused ? "opacity-60" : "opacity-100"
+                      }`}
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30 pointer-events-none" />
                   </>
                 )}
 
@@ -783,10 +785,6 @@ export function VmsDashboard() {
                 <div className="absolute top-2.5 left-2.5 flex items-center space-x-1.5 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-mono font-bold text-white">
                   <span className={`w-2 h-2 rounded-full ${isRecording && !isPaused ? "bg-red-500 animate-ping" : "bg-zinc-400"}`} />
                   <span>{isRecording && !isPaused ? `REC ${formatTime(recordDuration)}` : "PAUSED"}</span>
-                </div>
-
-                <div className="absolute top-2.5 right-2.5 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded-md text-[10px] font-mono text-zinc-300">
-                  Bay 1 • 1080p
                 </div>
 
                 {isPaused && (
@@ -803,7 +801,7 @@ export function VmsDashboard() {
                 <button
                   type="button"
                   onClick={() => setIsPaused(!isPaused)}
-                  className="px-4 py-2.5 rounded-xl border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-800 text-xs font-bold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer shadow-xs active:scale-95"
+                  className="px-4 py-2.5 rounded-2xl border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-800 text-xs font-bold flex items-center justify-center space-x-1.5 transition-colors cursor-pointer shadow-xs active:scale-95"
                 >
                   <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                     {isPaused ? (
@@ -821,17 +819,18 @@ export function VmsDashboard() {
                     if (isRecording) {
                       setIsRecording(false);
                       setIsPaused(false);
-                      alert(`Recording stopped and synced for order ${selectedOrder.orderNumber}! Saved duration: ${formatTime(recordDuration)}.`);
+                      alert(`Recording stopped and synced for order ${selectedOrder.orderNumber}! Duration: ${formatTime(recordDuration)}.`);
                     } else {
                       setIsRecording(true);
                       setIsPaused(false);
                       setRecordDuration(0);
                     }
                   }}
-                  className={`flex-1 py-2.5 px-4 rounded-xl text-white text-xs font-bold flex items-center justify-center space-x-2 transition-all cursor-pointer shadow-sm active:scale-98 ${isRecording
+                  className={`flex-1 py-2.5 px-4 rounded-2xl text-white text-xs font-bold flex items-center justify-center space-x-2 transition-all cursor-pointer shadow-sm active:scale-98 ${
+                    isRecording
                       ? "bg-[#EF4444] hover:bg-[#DC2626] shadow-red-500/25"
                       : "bg-[#16A34A] hover:bg-[#15803D] shadow-emerald-500/25"
-                    }`}
+                  }`}
                 >
                   <span className="w-2.5 h-2.5 rounded-full bg-white" />
                   <span>{isRecording ? "Stop Recording" : "Start Recording"}</span>
