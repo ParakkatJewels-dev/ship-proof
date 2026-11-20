@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { UserSession } from "./LoginModal";
 
 interface NavbarProps {
@@ -10,7 +11,6 @@ interface NavbarProps {
   setSelectedStation: (station: string) => void;
   stationStatus: string;
   currentUser: UserSession | null;
-  onOpenLogin: () => void;
   onSignOut: () => void;
 }
 
@@ -21,14 +21,13 @@ export function Navbar({
   setSelectedStation,
   stationStatus,
   currentUser,
-  onOpenLogin,
   onSignOut,
 }: NavbarProps) {
   return (
     <header className="border-b border-zinc-200 bg-white sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand */}
-        <div className="flex items-center space-x-3">
+        <Link href="/" className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-sm shadow-indigo-200">
             SP
           </div>
@@ -41,7 +40,7 @@ export function Navbar({
             </div>
             <p className="text-xs text-zinc-500">Order Packing Video Verification</p>
           </div>
-        </div>
+        </Link>
 
         {/* Navigation Tabs */}
         <nav className="flex space-x-1 bg-zinc-100 p-1 rounded-xl">
@@ -122,13 +121,13 @@ export function Navbar({
               </button>
             </div>
           ) : (
-            <button
-              onClick={onOpenLogin}
+            <Link
+              href="/login"
               className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm flex items-center space-x-1.5 transition-all cursor-pointer hover:shadow-md"
             >
               <span>🔑</span>
               <span>Login</span>
-            </button>
+            </Link>
           )}
         </div>
       </div>
