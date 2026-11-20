@@ -105,7 +105,7 @@ export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
 
             {/* Main Heading */}
             <div>
-              <h1 className="text-2xl sm:text-[30px] font-extrabold text-zinc-900 tracking-tight leading-[1.15]">
+              <h1 className="text-xl sm:text-2xl font-extrabold text-zinc-900 tracking-tight leading-[1.2]">
                 Sign in to our<br />packing portal today
               </h1>
             </div>
