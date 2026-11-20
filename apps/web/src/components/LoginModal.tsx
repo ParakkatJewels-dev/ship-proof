@@ -17,8 +17,8 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
-  const [adminEmail, setAdminEmail] = useState("admin@shipproof.com");
-  const [adminPassword, setAdminPassword] = useState("admin123");
+  const [adminEmail, setAdminEmail] = useState("");
+  const [adminPassword, setAdminPassword] = useState("");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -31,14 +31,14 @@ export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
     setLoading(true);
 
     setTimeout(() => {
-      if (!adminEmail || !adminEmail.includes("@")) {
-        setError("Please enter a valid administrator email address.");
+      if (!adminEmail) {
+        setError("Please enter your email address.");
         setLoading(false);
         return;
       }
 
       if (!adminPassword) {
-        setError("Please enter your administrator password.");
+        setError("Please enter your password.");
         setLoading(false);
         return;
       }
@@ -65,7 +65,7 @@ export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
         {/* Close Button top-right */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 z-20 w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-600 flex items-center justify-center transition-colors text-xs font-bold cursor-pointer"
+          className="absolute top-5 right-5 z-20 w-8 h-8 rounded-full bg-zinc-100 hover:bg-zinc-200 text-zinc-500 flex items-center justify-center transition-colors text-xs font-bold cursor-pointer"
           title="Close modal"
         >
           ✕
@@ -98,69 +98,67 @@ export function LoginModal({ isOpen, onClose, onLogin }: LoginModalProps) {
 
         </div>
 
-        {/* ================= RIGHT COLUMN: LOGIN SECTION (PURE WHITE #FFFFFF) ================= */}
+        {/* ================= RIGHT COLUMN: LOGIN SECTION (MATCHING REFERENCE DESIGN) ================= */}
         <div className="md:col-span-7 p-8 sm:p-12 flex flex-col justify-center bg-white text-zinc-900">
 
-          <div className="mb-6">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight leading-snug">
-              Admin Login
-            </h1>
-            <p className="text-xs sm:text-sm text-zinc-500 mt-1.5 font-normal">
-              Enter your credentials to access the audit and operations console
-            </p>
+          <div className="w-full max-w-[320px] mx-auto my-auto space-y-6">
+
+            {/* Main Heading */}
+            <div>
+              <h1 className="text-2xl sm:text-[28px] font-extrabold text-zinc-900 tracking-tight leading-snug">
+                Sign in to our<br />packing portal today
+              </h1>
+            </div>
+
+            {error && (
+              <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+
+              {/* Section: About yourself */}
+              <div>
+                <label className="block text-xs font-bold text-zinc-800 mb-2">
+                  About yourself
+                </label>
+
+                <div className="space-y-2">
+                  <input
+                    type="email"
+                    value={adminEmail}
+                    onChange={(e) => setAdminEmail(e.target.value)}
+                    placeholder="Email"
+                    required
+                    className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-lg bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#3654D6] transition-colors"
+                  />
+
+                  <input
+                    type="password"
+                    value={adminPassword}
+                    onChange={(e) => setAdminPassword(e.target.value)}
+                    placeholder="Password"
+                    required
+                    className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-lg bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#3654D6] transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Primary Action Button */}
+              <div className="pt-1">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-2.5 px-4 rounded-lg bg-[#3654D6] hover:bg-[#2b45b5] text-white font-semibold text-xs sm:text-sm transition-colors cursor-pointer text-center disabled:opacity-70"
+                >
+                  {loading ? "Signing in..." : "Sign in to portal"}
+                </button>
+              </div>
+
+            </form>
+
           </div>
-
-          {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
-              ⚠️ {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-
-            {/* Email Field */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-zinc-700 tracking-wide">
-                Email address
-              </label>
-              <input
-                type="email"
-                value={adminEmail}
-                onChange={(e) => setAdminEmail(e.target.value)}
-                placeholder="admin@shipproof.com"
-                required
-                className="w-full text-sm px-3.5 py-2.5 rounded-lg bg-white border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-[#3654D6] focus:ring-2 focus:ring-[#3654D6]/15 transition-colors"
-              />
-            </div>
-
-            {/* Password Field */}
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-zinc-700 tracking-wide">
-                Password
-              </label>
-              <input
-                type="password"
-                value={adminPassword}
-                onChange={(e) => setAdminPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full text-sm px-3.5 py-2.5 rounded-lg bg-white border border-zinc-200 text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-[#3654D6] focus:ring-2 focus:ring-[#3654D6]/15 transition-colors"
-              />
-            </div>
-
-            {/* Primary Action Button (Blue #3654D6) */}
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 px-4 rounded-lg bg-[#3654D6] hover:bg-[#2b45b5] text-white font-semibold text-sm transition-colors cursor-pointer flex items-center justify-center space-x-2 active:scale-[0.99] disabled:opacity-70"
-              >
-                <span>{loading ? "Authenticating..." : "Sign in to Admin Console"}</span>
-                <span>→</span>
-              </button>
-            </div>
-
-          </form>
 
         </div>
 
