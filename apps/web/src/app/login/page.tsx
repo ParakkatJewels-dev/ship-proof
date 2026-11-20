@@ -82,11 +82,11 @@ export default function LoginPage() {
       {/* ================= RIGHT SECTION: AUTHENTICATION FORM (MATCHING REFERENCE DESIGN) ================= */}
       <section className="bg-white text-zinc-900 flex flex-col justify-center items-center p-6 sm:p-10 lg:p-12 h-full overflow-y-auto">
 
-        <div className="w-full max-w-[320px] sm:max-w-[340px] mx-auto my-auto space-y-6">
+        <div className="w-full max-w-[340px] sm:max-w-[380px] mx-auto my-auto space-y-6">
 
           {/* Main Heading (2 Lines matching reference) */}
           <div>
-            <h1 className="text-2xl sm:text-[28px] font-extrabold text-zinc-900 tracking-tight leading-snug">
+            <h1 className="text-2xl sm:text-[30px] font-extrabold text-zinc-900 tracking-tight leading-snug">
               Sign in to our<br />packing portal today
             </h1>
           </div>
@@ -97,11 +97,11 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-3.5">
+          <form onSubmit={handleLogin} className="space-y-4">
 
             {/* Email Field */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-800 mb-1.5">
+              <label className="block text-sm sm:text-[15px] font-semibold text-zinc-800 mb-2">
                 Email id
               </label>
               <input
@@ -110,13 +110,13 @@ export default function LoginPage() {
                 onChange={(e) => setAdminEmail(e.target.value)}
                 placeholder="Enter your Email"
                 required
-                className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-lg bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#3654D6] transition-colors"
+                className="w-full text-sm sm:text-base px-4 py-3 rounded-lg bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 placeholder:text-sm sm:placeholder:text-[15px] focus:outline-none focus:border-[#3654D6] transition-colors"
               />
             </div>
 
             {/* Password Field */}
             <div>
-              <label className="block text-xs font-semibold text-zinc-800 mb-1.5">
+              <label className="block text-sm sm:text-[15px] font-semibold text-zinc-800 mb-2">
                 Password
               </label>
               <input
@@ -125,16 +125,16 @@ export default function LoginPage() {
                 onChange={(e) => setAdminPassword(e.target.value)}
                 placeholder="Enter your password"
                 required
-                className="w-full text-xs sm:text-sm px-3.5 py-2.5 rounded-lg bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-[#3654D6] transition-colors"
+                className="w-full text-sm sm:text-base px-4 py-3 rounded-lg bg-white border border-zinc-200 text-zinc-900 placeholder:text-zinc-400 placeholder:text-sm sm:placeholder:text-[15px] focus:outline-none focus:border-[#3654D6] transition-colors"
               />
             </div>
 
             {/* Primary Action Button (Blue #3654D6) */}
-            <div className="pt-1.5">
+            <div className="pt-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2.5 px-4 rounded-lg bg-[#3654D6] hover:bg-[#2b45b5] text-white font-semibold text-xs sm:text-sm transition-colors cursor-pointer text-center disabled:opacity-70"
+                className="w-full py-3 px-4 rounded-lg bg-[#3654D6] hover:bg-[#2b45b5] text-white font-semibold text-sm sm:text-base transition-colors cursor-pointer text-center disabled:opacity-70"
               >
                 {loading ? "Signing in..." : "Sign in to portal"}
               </button>
