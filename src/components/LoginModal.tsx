@@ -83,7 +83,7 @@ export function LoginModal({ isOpen, onClose, onLogin, selectedStation }: LoginM
         <div className="md:col-span-5 bg-[#3654D6] p-6 sm:p-8 flex flex-col items-center justify-center text-center relative text-white min-h-[360px] md:min-h-[520px]">
 
           {/* Center Graphic: Packing Illustration */}
-          <div className="my-auto py-4 flex flex-col items-center justify-center text-center z-10 w-full max-w-[300px]">
+          <div className="my-auto py-4 flex flex-col items-center justify-center text-center z-10 w-full max-w-[270px]">
             <div className="relative w-full flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -95,7 +95,7 @@ export function LoginModal({ isOpen, onClose, onLogin, selectedStation }: LoginM
 
             {/* ShipProof text below the image */}
             <div className="mt-3 text-center">
-              <span className="font-calligraphy text-3xl sm:text-4xl text-white inline-block transform scale-x-125 tracking-wider leading-tight drop-shadow-sm origin-center">
+              <span className="font-calligraphy text-3xl sm:text-4xl text-white block leading-tight tracking-wide drop-shadow-sm">
                 ShipProof
               </span>
               <p className="text-[11px] font-medium text-blue-100/90 tracking-widest uppercase mt-1">

@@ -74,7 +74,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center justify-center text-center my-auto w-full max-w-xl">
 
           {/* Packing Worker Illustration */}
-          <div className="relative w-full max-w-[320px] sm:max-w-[400px] lg:max-w-[480px] xl:max-w-[520px] flex items-center justify-center">
+          <div className="relative w-full max-w-[280px] sm:max-w-[360px] lg:max-w-[420px] xl:max-w-[460px] flex items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/packing-illustration.jpg"
@@ -86,7 +86,7 @@ export default function LoginPage() {
           {/* ShipProof Text Below The Image */}
           <div className="mt-3 sm:mt-3.5 text-center">
             <Link href="/" className="inline-block group">
-              <span className="font-calligraphy text-4xl sm:text-5xl lg:text-6xl text-white inline-block transform scale-x-125 tracking-wider leading-tight group-hover:scale-x-130 group-hover:scale-y-105 transition-transform drop-shadow-sm origin-center">
+              <span className="font-calligraphy text-4xl sm:text-5xl lg:text-6xl text-white block leading-tight tracking-wide group-hover:scale-105 transition-transform drop-shadow-sm">
                 ShipProof
               </span>
             </Link>
