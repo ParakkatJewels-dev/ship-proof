@@ -79,10 +79,10 @@ export default function LoginPage() {
 
       </section>
 
-      {/* ================= RIGHT SECTION: AUTHENTICATION FORM (FLAT CARD ON NEUTRAL GRAY BG) ================= */}
-      <section className="bg-[#F1F3F5] text-zinc-900 flex flex-col justify-center items-center p-4 sm:p-8 lg:p-12 h-full overflow-y-auto">
+      {/* ================= RIGHT SECTION: AUTHENTICATION FORM (CARD ON LIGHT BG) ================= */}
+      <section className="bg-[#F8FAFC] text-zinc-900 flex flex-col justify-center items-center p-4 sm:p-8 lg:p-12 h-full overflow-y-auto">
 
-        <div className="w-full max-w-[360px] sm:max-w-[400px] mx-auto my-auto bg-white rounded-2xl p-6 sm:p-8 border border-zinc-200 space-y-6">
+        <div className="w-full max-w-[360px] sm:max-w-[400px] mx-auto my-auto bg-white rounded-2xl p-6 sm:p-8 border border-zinc-200/80 shadow-sm space-y-6">
 
           {/* Main Heading (2 Lines matching reference) */}
           <div>
