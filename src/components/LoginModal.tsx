@@ -82,14 +82,14 @@ export function LoginModal({ isOpen, onClose, onLogin, selectedStation }: LoginM
         {/* ================= LEFT COLUMN: BRANDING (SOLID BLUE #3654D6) ================= */}
         <div className="md:col-span-5 bg-[#3654D6] p-6 sm:p-8 flex flex-col items-center justify-center text-center relative text-white min-h-[360px] md:min-h-[520px]">
 
-          {/* Center Graphic: Large Packing Illustration */}
-          <div className="my-auto py-4 flex flex-col items-center justify-center text-center z-10 w-full max-w-[320px]">
+          {/* Center Graphic: Packing Illustration */}
+          <div className="my-auto py-4 flex flex-col items-center justify-center text-center z-10 w-full max-w-[270px]">
             <div className="relative w-full flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/packing-illustration.jpg"
                 alt="ShipProof Order Packing Station Illustration"
-                className="w-full h-auto max-h-[320px] object-contain rounded-xl select-none"
+                className="w-full h-auto max-h-[250px] object-contain rounded-xl select-none"
               />
             </div>
 

@@ -73,13 +73,13 @@ export default function LoginPage() {
 
         <div className="flex flex-col items-center justify-center text-center my-auto w-full max-w-xl">
 
-          {/* Enlarged Packing Worker Illustration */}
-          <div className="relative w-full max-w-[340px] sm:max-w-[440px] lg:max-w-[520px] xl:max-w-[580px] flex items-center justify-center">
+          {/* Packing Worker Illustration */}
+          <div className="relative w-full max-w-[280px] sm:max-w-[360px] lg:max-w-[420px] xl:max-w-[460px] flex items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/packing-illustration.jpg"
               alt="ShipProof Order Packing Station Illustration"
-              className="w-full h-auto max-h-[58vh] sm:max-h-[64vh] lg:max-h-[70vh] object-contain rounded-2xl select-none"
+              className="w-full h-auto max-h-[46vh] sm:max-h-[52vh] lg:max-h-[56vh] object-contain rounded-2xl select-none"
             />
           </div>
 
