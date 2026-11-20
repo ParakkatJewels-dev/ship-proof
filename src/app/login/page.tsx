@@ -86,7 +86,7 @@ export default function LoginPage() {
           {/* ShipProof Text Below The Image */}
           <div className="mt-3 sm:mt-3.5 text-center">
             <Link href="/" className="inline-block group">
-              <span className="font-calligraphy text-4xl sm:text-5xl lg:text-6xl text-white block leading-tight tracking-wide group-hover:scale-105 transition-transform drop-shadow-sm">
+              <span className="font-calligraphy font-bold text-4xl sm:text-5xl lg:text-6xl text-white block leading-tight tracking-wide group-hover:scale-105 transition-transform drop-shadow-sm">
                 ShipProof
               </span>
             </Link>

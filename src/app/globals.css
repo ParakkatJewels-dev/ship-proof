@@ -18,6 +18,7 @@
 
 .font-calligraphy {
   font-family: "Shadows Into Light Two", cursive, sans-serif;
+  font-synthesis: weight;
 }
 
 html,
