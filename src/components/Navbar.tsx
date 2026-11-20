@@ -27,17 +27,17 @@ export function Navbar({
     <header className="border-b border-zinc-200 bg-white sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Brand */}
-        <Link href="/" className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-sm shadow-indigo-200">
-            SP
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <span className="font-bold text-lg text-zinc-900 tracking-tight">ShipProof</span>
-              <span className="text-[11px] font-semibold uppercase px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
-                v1.0 Pro
-              </span>
-            </div>
+            <Link href="/" className="flex items-center space-x-3">
+              <div className="w-10 h-10 rounded-xl bg-[#3154D6] flex items-center justify-center text-white font-bold text-lg shadow-sm shadow-blue-500/20">
+                SP
+              </div>
+              <div>
+                <div className="flex items-center space-x-2">
+                  <span className="font-bold text-lg text-zinc-900 tracking-tight">ShipProof</span>
+                  <span className="text-[11px] font-semibold uppercase px-2 py-0.5 rounded-full bg-blue-50 text-[#3154D6] border border-blue-100">
+                    v1.0 Pro
+                  </span>
+                </div>
             <p className="text-xs text-zinc-500">Order Packing Video Verification</p>
           </div>
         </Link>
@@ -46,31 +46,28 @@ export function Navbar({
         <nav className="flex space-x-1 bg-zinc-100 p-1 rounded-xl">
           <button
             onClick={() => setCurrentTab("packer")}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
-              currentTab === "packer"
-                ? "bg-white text-zinc-900 shadow-sm"
-                : "text-zinc-600 hover:text-zinc-900"
-            }`}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${currentTab === "packer"
+              ? "bg-white text-zinc-900 shadow-sm"
+              : "text-zinc-600 hover:text-zinc-900"
+              }`}
           >
             📦 Packer Station
           </button>
           <button
             onClick={() => setCurrentTab("admin")}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
-              currentTab === "admin"
-                ? "bg-white text-zinc-900 shadow-sm"
-                : "text-zinc-600 hover:text-zinc-900"
-            }`}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${currentTab === "admin"
+              ? "bg-white text-zinc-900 shadow-sm"
+              : "text-zinc-600 hover:text-zinc-900"
+              }`}
           >
             📊 Admin & Retention
           </button>
           <button
             onClick={() => setCurrentTab("customer")}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${
-              currentTab === "customer"
-                ? "bg-white text-zinc-900 shadow-sm"
-                : "text-zinc-600 hover:text-zinc-900"
-            }`}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer ${currentTab === "customer"
+              ? "bg-white text-zinc-900 shadow-sm"
+              : "text-zinc-600 hover:text-zinc-900"
+              }`}
           >
             🎥 Customer View
           </button>
@@ -102,14 +99,14 @@ export function Navbar({
           {currentUser ? (
             <div className="flex items-center space-x-2 pl-2 border-l border-zinc-200">
               <div className="flex items-center space-x-2 bg-zinc-50 border border-zinc-200 px-3 py-1.5 rounded-xl">
-                <span className="w-2 h-2 rounded-full bg-indigo-600" />
+                <span className="w-2 h-2 rounded-full bg-[#3154D6]" />
                 <div className="text-left">
                   <span className="text-xs font-bold text-zinc-800 block leading-tight">
                     {currentUser.name}
                   </span>
-                  <span className="text-[10px] font-semibold uppercase text-indigo-600 tracking-wider">
-                    {currentUser.role}
-                  </span>
+                    <span className="text-[10px] font-semibold uppercase text-[#3154D6] tracking-wider">
+                      {currentUser.role}
+                    </span>
                 </div>
               </div>
               <button
@@ -121,16 +118,16 @@ export function Navbar({
               </button>
             </div>
           ) : (
-            <Link
-              href="/login"
-              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm flex items-center space-x-1.5 transition-all cursor-pointer hover:shadow-md"
-            >
-              <span>🔑</span>
-              <span>Login</span>
-            </Link>
-          )}
+          <Link
+            href="/login"
+            className="px-4 py-2 rounded-xl bg-[#3154D6] hover:bg-[#2544ba] text-white font-bold text-xs shadow-sm flex items-center space-x-1.5 transition-all cursor-pointer hover:shadow-md"
+          >
+            <span>🔑</span>
+            <span>Login</span>
+          </Link>
+        )}
         </div>
-      </div>
-    </header>
+      </div >
+    </header >
   );
 }
