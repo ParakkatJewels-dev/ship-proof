@@ -6,6 +6,14 @@
   --font-calligraphy: "Shadows Into Light Two", cursive;
   --color-brand: #3654D6;
   --color-brand-hover: #2b45b5;
+
+  /* Dashboard palette: cool grey canvas, white cards, login-page blue accents */
+  --color-canvas: #EEF0F6;
+  --color-ink: #1A1D29;
+  --color-muted: #6B7080;
+  --color-accent: #3654D6;
+  --color-accent-dark: #2B45B5;
+  --color-accent-pale: #EAEEFC;
 }
 
 :root {
@@ -34,4 +42,14 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: "Poppins", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+@keyframes row-menu-in {
+  from {
+    opacity: 0;
+    transform: translateX(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }

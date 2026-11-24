@@ -14,6 +14,11 @@ export declare const WsEvents: {
     readonly SESSION_UPDATE: "SESSION_UPDATE";
 };
 export type WsEventType = (typeof WsEvents)[keyof typeof WsEvents];
+/**
+ * WebSocket close code the API uses when a camera agent tries to connect while
+ * another device is already connected. Only one device may be connected at a time.
+ */
+export declare const WS_CLOSE_DEVICE_IN_USE = 4009;
 export interface StartRecordingPayload {
     stationId: string;
     orderId: string;

@@ -15,7 +15,8 @@ export class OrderService {
 
     // 1. Check in-memory store if mock
     if (isMockSupabase) {
-      if (mockOrdersStore.has(cleanNumber)) {
+      // A connected store is always asked fresh; the cache only serves demo mode.
+      if (shopifyClient.isMock && mockOrdersStore.has(cleanNumber)) {
         return mockOrdersStore.get(cleanNumber)!;
       }
       // Fetch from Shopify mock client and cache
@@ -27,13 +28,13 @@ export class OrderService {
       return null;
     }
 
-    // 2. Query Supabase
-    const { data, error } = await supabase
-      .from("orders")
-      .select("*")
-      .or(`order_number.ilike.%${cleanNumber}%,shopify_order_id.eq.${orderNumberOrId},id.eq.${orderNumberOrId}`)
-      .limit(1)
-      .maybeSingle();
+    // 2. Query Supabase. Match the order number exactly, and only compare the UUID column when the input is a UUID,
+    // because Postgres rejects a non-UUID string compared against a uuid column.
+    const filters = [`order_number.eq.#${cleanNumber}`, `shopify_order_id.eq.gid://shopify/Order/${cleanNumber}`];
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(orderNumberOrId.trim())) {
+      filters.push(`id.eq.${orderNumberOrId.trim()}`);
+    }
+    const { data, error } = await supabase.from("orders").select("*").or(filters.join(",")).limit(1).maybeSingle();
 
     if (error) {
       logger.error("Supabase order query error:", error);
@@ -86,7 +87,7 @@ export class OrderService {
         total_price: parseFloat(order.totalPrice),
         items: order.items,
         fulfillment_status: order.fulfillmentStatus,
-        deliveryStatus: order.deliveryStatus,
+        delivery_status: order.deliveryStatus,
         delivered_at: order.deliveredAt,
         updated_at: new Date().toISOString(),
       },
@@ -134,8 +135,21 @@ export class OrderService {
    * List recent orders for admin table.
    */
   async listOrders(limit = 20): Promise<Order[]> {
+    // Without a database, read recent orders straight from Shopify when a store is connected.
     if (isMockSupabase) {
+      if (!shopifyClient.isMock) {
+        const orders = await shopifyClient.listRecentOrders(limit);
+        for (const o of orders) mockOrdersStore.set(o.orderNumber.replace(/^#/, ""), o);
+        return orders;
+      }
       return Array.from(mockOrdersStore.values());
+    }
+
+    // With a database, seed it from Shopify on first use; webhooks keep it current afterwards.
+    const { count } = await supabase.from("orders").select("id", { count: "exact", head: true });
+    if (!count && !shopifyClient.isMock) {
+      const orders = await shopifyClient.listRecentOrders(limit);
+      for (const o of orders) await this.saveOrder(o);
     }
 
     const { data } = await supabase

@@ -12,10 +12,25 @@ export class VideoService {
    * Generates a signed upload URL so the camera agent can upload directly to Supabase Storage.
    */
   async requestUploadUrl(orderId: string, sessionId: string, stationId: string, fileName: string) {
-    const videoId = uuidv4();
     const cleanFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
     const storagePath = `orders/${orderId}/${sessionId}_${cleanFileName}`;
 
+    // The camera agent retries failed uploads, so asking again for the same recording must not create
+    // a second video record. Hand out a fresh upload address for the existing one instead.
+    const existing = isMockSupabase
+      ? mockVideosStore.get(orderId)?.sessionId === sessionId
+        ? mockVideosStore.get(orderId)
+        : null
+      : (
+          await supabase.from("videos").select("id, storage_path").eq("session_id", sessionId).maybeSingle()
+        ).data;
+    if (existing) {
+      const existingPath = "storagePath" in existing ? existing.storagePath : existing.storage_path;
+      const retry = await storageService.createSignedUploadUrl(existingPath);
+      return { videoId: existing.id, storagePath: existingPath, signedUrl: retry.signedUrl, token: retry.token };
+    }
+
+    const videoId = uuidv4();
     const { signedUrl, token } = await storageService.createSignedUploadUrl(storagePath);
 
     const initialRecord: VideoRecord = {
@@ -59,8 +74,8 @@ export class VideoService {
   /**
    * Finalizes upload confirmation after camera agent finishes streaming the file.
    */
-  async completeUpload(orderId: string, sessionId: string, fileSizeBytes: number, durationSeconds: number) {
-    logger.info(`Video upload completed for order ${orderId}, size: ${fileSizeBytes} bytes`);
+  async completeUpload(orderId: string, sessionId: string, fileSizeBytes: number, durationSeconds: number, interrupted = false) {
+    logger.info(`Video upload completed for order ${orderId}, size: ${fileSizeBytes} bytes${interrupted ? " (interrupted recording)" : ""}`);
 
     // Generate signed download URL for playback
     const existing = await this.getVideoForOrder(orderId);
@@ -74,6 +89,7 @@ export class VideoService {
       ...existing,
       fileSizeBytes,
       durationSeconds,
+      interrupted,
       status: VideoStatus.ACTIVE,
       downloadUrl,
       updatedAt: new Date().toISOString(),
@@ -87,6 +103,7 @@ export class VideoService {
         .update({
           file_size_bytes: fileSizeBytes,
           duration_seconds: durationSeconds,
+          interrupted,
           status: VideoStatus.ACTIVE,
           download_url: downloadUrl,
           updated_at: new Date().toISOString(),
@@ -130,6 +147,7 @@ export class VideoService {
       status: data.status as VideoStatus,
       downloadUrl: data.download_url,
       retentionDays: data.retention_days,
+      interrupted: data.interrupted ?? false,
       expiresAt: data.expires_at,
       deletedAt: data.deleted_at,
       createdAt: data.created_at,
@@ -163,6 +181,7 @@ export class VideoService {
       status: d.status as VideoStatus,
       downloadUrl: d.download_url,
       retentionDays: d.retention_days,
+      interrupted: d.interrupted ?? false,
       expiresAt: d.expires_at,
       deletedAt: d.deleted_at,
       createdAt: d.created_at,

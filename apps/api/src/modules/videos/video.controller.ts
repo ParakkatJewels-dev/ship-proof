@@ -19,12 +19,12 @@ export class VideoController {
 
   async completeUpload(req: Request, res: Response) {
     try {
-      const { orderId, sessionId, fileSizeBytes, durationSeconds } = req.body;
+      const { orderId, sessionId, fileSizeBytes, durationSeconds, interrupted } = req.body;
       if (!orderId || !sessionId) {
         return sendError(res, "Missing required fields: orderId, sessionId", 400);
       }
 
-      const video = await videoService.completeUpload(orderId, sessionId, fileSizeBytes || 0, durationSeconds || 0);
+      const video = await videoService.completeUpload(orderId, sessionId, fileSizeBytes || 0, durationSeconds || 0, !!interrupted);
       return sendSuccess(res, video, "Video recording processed successfully");
     } catch (err: any) {
       return sendError(res, err.message, 500);

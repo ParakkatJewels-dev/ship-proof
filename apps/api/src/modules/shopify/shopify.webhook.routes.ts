@@ -4,9 +4,8 @@ import { validateShopifyHmac } from "../../middlewares/validateShopifyHmac.js";
 
 const router = Router();
 
-router.post("/orders-create", validateShopifyHmac, (req, res) =>
-  shopifyWebhookController.handleOrderCreated(req, res)
-);
+router.post("/orders-create", validateShopifyHmac, (req, res) => shopifyWebhookController.handleOrderCreated(req, res));
+router.post("/orders-updated", validateShopifyHmac, (req, res) => shopifyWebhookController.handleOrderCreated(req, res));
 router.post("/fulfillments-update", validateShopifyHmac, (req, res) =>
   shopifyWebhookController.handleFulfillmentUpdate(req, res)
 );

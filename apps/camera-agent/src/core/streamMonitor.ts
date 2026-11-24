@@ -21,7 +21,10 @@ export class StreamMonitor {
   startHealthCheck(intervalMs = 5000) {
     setInterval(() => {
       // In production, verifies video feed frames or device descriptor presence
-      if (this.status === CameraStatus.ERROR || this.status === CameraStatus.DISCONNECTED) {
+      if (
+        this.status === CameraStatus.ERROR ||
+        this.status === CameraStatus.DISCONNECTED
+      ) {
         agentLogger.warn("Attempting camera driver reconnection...");
         this.setStatus(CameraStatus.CONNECTED);
       }

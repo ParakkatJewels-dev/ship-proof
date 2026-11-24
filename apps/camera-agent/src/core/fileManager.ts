@@ -7,7 +7,9 @@ export class FileManager {
   init() {
     if (!fs.existsSync(agentConfig.recordingsDir)) {
       fs.mkdirSync(agentConfig.recordingsDir, { recursive: true });
-      agentLogger.info(`Created local recordings directory: ${agentConfig.recordingsDir}`);
+      agentLogger.info(
+        `Created local recordings directory: ${agentConfig.recordingsDir}`,
+      );
     }
   }
 

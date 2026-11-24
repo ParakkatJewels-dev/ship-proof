@@ -1,73 +1,59 @@
 import { Request, Response } from "express";
 import { orderService } from "../orders/order.service.js";
+import { shopifyClient } from "../../integrations/shopify/shopify.client.js";
 import { DeliveryStatus } from "@shipproof/shared";
 import { logger } from "../../utils/logger.js";
 import { sendSuccess } from "../../utils/response.js";
 
+/**
+ * Shopify expects a 2xx within a few seconds, so each handler acknowledges first
+ * and then does its work. Failures are logged; Shopify does not need to retry them.
+ */
 export class ShopifyWebhookController {
-  /**
-   * Webhook: orders/create or orders/updated
-   */
+  /** orders/create and orders/updated */
   async handleOrderCreated(req: Request, res: Response) {
     const payload = req.body;
-    logger.info(`Shopify webhook: Order Created/Updated #${payload.name || payload.id}`);
+    sendSuccess(res, { received: true });
+
+    const orderName: string | undefined = payload?.name;
+    if (!orderName) return;
+    logger.info(`Shopify webhook ${req.headers["x-shopify-topic"] || "orders"}: ${orderName}`);
 
     try {
-      if (payload.id) {
-        await orderService.saveOrder({
-          id: String(payload.id),
-          shopifyOrderId: `gid://shopify/Order/${payload.id}`,
-          orderNumber: payload.name || `#${payload.order_number}`,
-          customerName: `${payload.customer?.first_name || ""} ${payload.customer?.last_name || ""}`.trim() || "Customer",
-          customerEmail: payload.email || "",
-          currency: payload.currency || "INR",
-          totalPrice: payload.total_price || "0.00",
-          fulfillmentStatus: payload.fulfillment_status || "unfulfilled",
-          deliveryStatus: DeliveryStatus.PENDING,
-          deliveredAt: null,
-          createdAt: payload.created_at || new Date().toISOString(),
-          updatedAt: payload.updated_at || new Date().toISOString(),
-          items: (payload.line_items || []).map((item: any) => ({
-            id: String(item.id),
-            sku: item.sku || "NO-SKU",
-            title: item.title,
-            variantTitle: item.variant_title,
-            quantity: item.quantity,
-            price: item.price,
-            imageUrl: item.image?.src,
-            barcode: item.barcode,
-            verified: false,
-          })),
-        });
-      }
-      return sendSuccess(res, { received: true });
+      // Re-read through GraphQL so delivery status comes from the order's fulfillments,
+      // instead of resetting it from the webhook payload.
+      const order = await shopifyClient.getOrder(orderName);
+      if (order) await orderService.saveOrder(order);
     } catch (err: any) {
-      logger.error("Failed to handle order webhook:", err);
-      return sendSuccess(res, { error: err.message }); // Acknowledge to Shopify
+      logger.error(`Failed to sync order ${orderName} from webhook:`, err.message);
     }
   }
 
-  /**
-   * Webhook: fulfillments/update or orders/fulfilled
-   * Triggers the 7-day retention countdown upon DELIVERED status!
-   */
+  /** fulfillments/update: starts the 7-day retention countdown once a shipment is delivered. */
   async handleFulfillmentUpdate(req: Request, res: Response) {
     const payload = req.body;
+    sendSuccess(res, { acknowledged: true });
+
+    if (!payload?.order_id) return;
     const shopifyOrderId = `gid://shopify/Order/${payload.order_id}`;
-    const shipmentStatus = payload.shipment_status?.toLowerCase();
+    const shipmentStatus = String(payload.shipment_status || "").toLowerCase();
+    logger.info(`Shopify fulfillment update for ${shopifyOrderId}: status=${shipmentStatus || "none"}`);
 
-    logger.info(`Shopify Fulfillment Update for ${shopifyOrderId}: status=${shipmentStatus}`);
-
-    if (shipmentStatus === "delivered") {
-      const deliveredAt = payload.updated_at || new Date().toISOString();
-      await orderService.updateDeliveryStatus(shopifyOrderId, DeliveryStatus.DELIVERED, deliveredAt);
-    } else if (shipmentStatus === "out_for_delivery") {
-      await orderService.updateDeliveryStatus(shopifyOrderId, DeliveryStatus.OUT_FOR_DELIVERY);
-    } else if (shipmentStatus === "in_transit") {
-      await orderService.updateDeliveryStatus(shopifyOrderId, DeliveryStatus.IN_TRANSIT);
+    try {
+      if (shipmentStatus === "delivered") {
+        await orderService.updateDeliveryStatus(
+          shopifyOrderId,
+          DeliveryStatus.DELIVERED,
+          payload.updated_at || new Date().toISOString()
+        );
+      } else if (shipmentStatus === "out_for_delivery") {
+        await orderService.updateDeliveryStatus(shopifyOrderId, DeliveryStatus.OUT_FOR_DELIVERY);
+      } else if (shipmentStatus === "in_transit" || shipmentStatus === "attempted_delivery") {
+        await orderService.updateDeliveryStatus(shopifyOrderId, DeliveryStatus.IN_TRANSIT);
+      }
+    } catch (err: any) {
+      logger.error(`Failed to update delivery status for ${shopifyOrderId}:`, err.message);
     }
-
-    return sendSuccess(res, { acknowledged: true });
   }
 }
 

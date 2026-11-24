@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { login } from "../../lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,35 +15,22 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleLogin = (e?: React.FormEvent) => {
+  const handleLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (loading) return;
     setError(null);
+    if (!adminEmail.trim()) return setError("Please enter your email address.");
+    if (!adminPassword) return setError("Please enter your password.");
+
     setLoading(true);
-
-    setTimeout(() => {
-      if (!adminEmail) {
-        setError("Please enter your email address.");
-        setLoading(false);
-        return;
-      }
-
-      if (!adminPassword) {
-        setError("Please enter your password.");
-        setLoading(false);
-        return;
-      }
-
-      const session = {
-        name: "Admin Kasinath",
-        role: "ADMIN" as const,
-        id: "ADM-001",
-      };
-
-      if (typeof window !== "undefined") {
-        localStorage.setItem("shipproof_user", JSON.stringify(session));
-      }
-      router.push("/?tab=admin");
-    }, 350);
+    try {
+      await login(adminEmail, adminPassword);
+      // The page watches the session and moves on to the dashboard by itself.
+      router.replace("/");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sign-in failed. Try again.");
+      setLoading(false);
+    }
   };
 
   return (

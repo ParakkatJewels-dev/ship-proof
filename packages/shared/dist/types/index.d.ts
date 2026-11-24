@@ -71,6 +71,8 @@ export interface VideoRecord {
     status: VideoStatus;
     downloadUrl?: string;
     retentionDays: number;
+    /** True when the recording was cut off (power or network failure) and only part of it was saved. */
+    interrupted?: boolean;
     expiresAt?: string | null;
     deletedAt?: string | null;
     createdAt: string;
@@ -78,8 +80,31 @@ export interface VideoRecord {
 }
 export interface StationHeartbeat {
     stationId: string;
+    /** Sent by the camera agent so the dashboard can name the connected device. */
+    stationName?: string;
+    cameraName?: string;
+    /** Recordings finished on the station and still waiting for the cloud to confirm them. */
+    pendingUploads?: number;
+    /** The recording in progress on the device, if any. */
+    recording?: {
+        sessionId: string;
+        orderId: string;
+        orderNumber: string;
+        startedAt: string;
+        previewToken?: string;
+    } | null;
+    /** A finished recording waiting for the packer to review, trim and save it. */
+    review?: {
+        sessionId: string;
+        orderId: string;
+        orderNumber: string;
+        reviewToken: string;
+        videoSeconds: number;
+    } | null;
     status: StationStatus;
     cameraStatus: CameraStatus;
+    /** The camera's picture size as measured by the device, for example "1920×1080". */
+    resolution?: string;
     fps?: number;
     diskSpaceFreeMb?: number;
     activeSessionId?: string;

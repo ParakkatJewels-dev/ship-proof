@@ -5,6 +5,9 @@ import { streamMonitor } from "./core/streamMonitor.js";
 import { discoverConnectedCameras } from "./utils/deviceDiscovery.js";
 import { createLocalHttpServer } from "./network/localHttpServer.js";
 import { wsClient } from "./network/wsClient.js";
+import { recorder } from "./core/ffmpeg.recorder.js";
+import { probeCamera } from "./core/cameraInfo.js";
+import { recoverInterruptedSessions, uploadQueue } from "./network/uploadQueue.js";
 
 async function main() {
   agentLogger.info("==========================================================");
@@ -19,17 +22,28 @@ async function main() {
   const cameras = discoverConnectedCameras();
   agentLogger.info(`Connected Cameras detected: ${cameras.map((c) => c.name).join(", ")}`);
 
+  // 3a. Recover recordings that were cut off by a power cut or crash, then start the upload queue.
+  recoverInterruptedSessions();
+  uploadQueue.start();
+  recorder.onAutoStop = (result) => {
+    wsClient.announceAutoStop(result);
+  };
+
   // 3. Start stream health monitor
   streamMonitor.startHealthCheck();
 
   // 4. Start local zero-latency HTTP server
   const localApp = createLocalHttpServer();
-  localApp.listen(agentConfig.localHttpPort, () => {
+  // Listen on this computer only; the dashboard on the same PC is the only intended client.
+  localApp.listen(agentConfig.localHttpPort, "127.0.0.1", () => {
     agentLogger.info(`Local Station API listening on http://localhost:${agentConfig.localHttpPort}`);
   });
 
   // 5. Connect to Cloud WebSocket Gateway
   wsClient.connect();
+
+  // 6. Read what size and speed the camera really delivers, for the dashboard.
+  probeCamera(() => recorder.isRecording());
 }
 
 main().catch((err) => {
