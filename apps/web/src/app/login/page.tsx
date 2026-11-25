@@ -54,8 +54,8 @@ export default function LoginPage() {
 
           {/* ShipProof Text Below The Image */}
           <div className="mt-4 sm:mt-[18px] text-center">
-            <Link href="/" className="inline-block group">
-              <span className="font-calligraphy font-bold text-4xl sm:text-5xl lg:text-6xl text-white block leading-tight tracking-wide group-hover:scale-105 transition-transform drop-shadow-sm">
+            <Link href="/" className="inline-block">
+              <span className="font-calligraphy font-bold text-4xl sm:text-5xl lg:text-6xl text-white block leading-tight tracking-wide drop-shadow-sm">
                 ShipProof
               </span>
             </Link>
@@ -74,7 +74,7 @@ export default function LoginPage() {
             <h1 className="text-xl sm:text-2xl font-extrabold text-zinc-900 tracking-tight leading-[1.2]">
               Sign in to our
               <br />
-              packing portal today
+              packing portal today!
             </h1>
           </div>
 
