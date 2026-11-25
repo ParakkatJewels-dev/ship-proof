@@ -34,6 +34,12 @@ export interface SessionRecord {
   /** True when the packer cut the video down before saving. */
   trimmed?: boolean;
   fileSizeBytes?: number;
+  /** True when the video was compressed before upload; finalFile then names the compressed file. */
+  compressed?: boolean;
+  /** True when compression was tried and not used, so the original is uploaded. */
+  compressSkipped?: boolean;
+  /** Size of the video before compression. */
+  originalFileSizeBytes?: number;
   attempts: number;
   nextAttemptAt?: string;
   lastError?: string;

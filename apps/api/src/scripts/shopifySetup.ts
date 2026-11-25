@@ -3,6 +3,7 @@
  *
  *   npm run shopify:check
  *   npm run shopify:webhooks      (needs API_PUBLIC_URL set to a public HTTPS address)
+ *   npm run shopify:definitions   (creates the order fields the customer tracking page reads; run once)
  */
 import { config } from "../config/env.config.js";
 import { shopifyClient } from "../integrations/shopify/shopify.client.js";
@@ -82,8 +83,22 @@ async function registerWebhooks() {
   }
 }
 
+async function createDefinitions() {
+  console.log("Creating the ShipProof order fields with customer account read access...");
+  const results = await shopifyClient.ensureMetafieldDefinitions();
+  for (const r of results) {
+    if (r.state === "failed") console.error(`✗ shipproof.${r.key}: ${r.message}`);
+    else console.log(`${r.state === "created" ? "✓ created" : "• already exists"}  shipproof.${r.key}`);
+  }
+  if (results.some((r) => r.state === "exists")) {
+    console.log("• A field that already existed keeps its old access settings. If the customer page cannot read it, set its Customer account access to Read in Shopify admin (Settings > Custom data > Orders).");
+  }
+  if (results.some((r) => r.state === "failed")) process.exit(1);
+}
+
 checkConnection()
   .then(() => (process.argv.includes("--webhooks") ? registerWebhooks() : undefined))
+  .then(() => (process.argv.includes("--definitions") ? createDefinitions() : undefined))
   .catch((err) => {
     console.error(`✗ ${err.message}`);
     process.exit(1);

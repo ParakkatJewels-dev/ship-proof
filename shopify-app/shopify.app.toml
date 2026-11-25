@@ -1,0 +1,21 @@
+# ShipProof Shopify app configuration. UNTESTED: written from Shopify's documentation, not yet deployed.
+#
+# Link this folder to your Dev Dashboard app once:   cd shopify-app && npx shopify app config link
+# That fills in client_id. Then:                      npx shopify app dev      (preview on a development store)
+#                                                     npx shopify app deploy   (publish the extension)
+
+name = "ShipProof"
+client_id = ""
+application_url = "https://example.com"
+embedded = false
+
+[access_scopes]
+# The first four are what the ShipProof API already uses. customer_read_orders lets the customer account
+# extension read the packing fields of the signed-in customer's own order.
+scopes = "read_orders,write_orders,read_customers,read_fulfillments,customer_read_orders"
+
+[auth]
+redirect_urls = ["https://example.com/auth/callback"]
+
+[webhooks]
+api_version = "2025-10"

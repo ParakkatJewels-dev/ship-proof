@@ -19,15 +19,6 @@ import { Card, OrdersTable } from "./ui";
 /* Demo metrics. Replace with API data once the dashboard is wired up.       */
 /* ------------------------------------------------------------------------- */
 
-// Orders packed per hour today, for the mini bar chart.
-const PACKED_PER_HOUR = [
-  { label: "10 AM", value: 14 },
-  { label: "11 AM", value: 22 },
-  { label: "12 PM", value: 9 },
-  { label: "1 PM", value: 18 },
-  { label: "2 PM", value: 25 },
-];
-
 const DEMO_METRICS = {
   videosStored: 1284,
 };
@@ -105,72 +96,6 @@ function readStoredFirstName() {
 function subscribeToStorage(onChange: () => void) {
   window.addEventListener("storage", onChange);
   return () => window.removeEventListener("storage", onChange);
-}
-
-/* ------------------------------------------------------------------------- */
-/* Small building blocks                                                      */
-/* ------------------------------------------------------------------------- */
-
-function Squiggle({ light = false }: { light?: boolean }) {
-  return (
-    <svg
-      viewBox="0 0 80 36"
-      className="w-12 h-7 shrink-0"
-      fill="none"
-      aria-hidden="true"
-    >
-      <defs>
-        <linearGradient
-          id={light ? "sq-light" : "sq-dark"}
-          x1="0"
-          x2="1"
-          y1="0"
-          y2="0"
-        >
-          <stop
-            offset="0"
-            stopColor={light ? "#FFFFFF" : "#3654D6"}
-            stopOpacity="1"
-          />
-          <stop
-            offset="1"
-            stopColor={light ? "#FFFFFF" : "#3654D6"}
-            stopOpacity="0.15"
-          />
-        </linearGradient>
-      </defs>
-      <path
-        d="M3 30 C 12 30, 14 6, 24 8 S 34 32, 44 24 S 60 4, 77 10"
-        stroke={`url(#${light ? "sq-light" : "sq-dark"})`}
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-function MiniBars({ data }: { data: { label: string; value: number }[] }) {
-  const max = Math.max(...data.map((d) => d.value));
-  return (
-    <div
-      className="flex items-end gap-1.5 h-11"
-      role="img"
-      aria-label="Orders packed per hour today"
-    >
-      {data.map((d) => (
-        <div
-          key={d.label}
-          title={`${d.label}: ${d.value} packed`}
-          className="w-[7px] h-full rounded-full bg-accent-pale flex items-end overflow-hidden"
-        >
-          <div
-            className="w-full rounded-full bg-accent-dark"
-            style={{ height: `${(d.value / max) * 100}%` }}
-          />
-        </div>
-      ))}
-    </div>
-  );
 }
 
 /* ------------------------------------------------------------------------- */
@@ -255,7 +180,6 @@ export function VmsDashboard() {
             <p className="text-sm text-ink/80">Packed orders</p>
             <p className="text-2xl font-bold mt-0.5">{packedCount}</p>
           </div>
-          <MiniBars data={PACKED_PER_HOUR} />
         </Card>
 
         <Card className="flex items-center gap-3 py-5! xl:col-span-4">
@@ -268,7 +192,6 @@ export function VmsDashboard() {
             </p>
             <p className="text-2xl font-bold mt-0.5">{pendingCount}</p>
           </div>
-          <Squiggle />
         </Card>
 
         <Card className="flex items-center gap-3 py-5! sm:col-span-2 xl:col-span-4">

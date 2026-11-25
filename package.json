@@ -16,9 +16,11 @@
     "build:api": "npm --prefix apps/api run build",
     "build:agent": "npm --prefix apps/camera-agent run build",
     "build:web": "npm --prefix apps/web run build",
-    "build": "npm run build:shared && npm run build:api && npm run build:agent && npm run build:web"
+    "build": "npm run build:shared && npm run build:api && npm run build:agent && npm run build:web",
+    "barcodes": "node scripts/barcodes.mjs"
   },
   "devDependencies": {
+    "bwip-js": "^4.11.4",
     "concurrently": "^10.0.7"
   }
 }

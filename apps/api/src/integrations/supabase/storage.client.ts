@@ -51,6 +51,22 @@ export class StorageService {
     return data.signedUrl;
   }
 
+  /** Size in bytes of a stored file, or null when it is not there. */
+  async statObject(filePath: string): Promise<number | null> {
+    if (isMockSupabase) return 0;
+    const slash = filePath.lastIndexOf("/");
+    const folder = filePath.slice(0, slash);
+    const name = filePath.slice(slash + 1);
+    const { data, error } = await supabase.storage.from(this.bucket).list(folder, { search: name, limit: 5 });
+    if (error) {
+      logger.error(`Could not look up storage file ${filePath}`, error);
+      return null;
+    }
+    const found = data?.find((f) => f.name === name);
+    const size = (found?.metadata as { size?: number } | undefined)?.size;
+    return found ? (typeof size === "number" ? size : 0) : null;
+  }
+
   /**
    * Deletes video object from storage upon retention expiry.
    */

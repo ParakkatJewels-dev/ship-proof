@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { sendError } from "../utils/response.js";
 import { UserRole } from "@shipproof/shared";
 import { AuthError, authService } from "../modules/auth/auth.service.js";
+import { verifyStationKey } from "../modules/stations/stationAuth.js";
 
 export interface AuthenticatedRequest extends Request {
   user?: {
@@ -18,6 +19,9 @@ export async function authenticate(req: AuthenticatedRequest, res: Response, nex
   const stationKey = req.headers["x-station-key"] as string;
   const stationId = req.headers["x-station-id"] as string;
   if (stationKey && stationId) {
+    if (!(await verifyStationKey(stationId, stationKey))) {
+      return sendError(res, "Camera station key not accepted.", 401);
+    }
     req.user = { id: stationId, role: UserRole.STATION, stationId };
     return next();
   }

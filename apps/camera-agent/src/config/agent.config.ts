@@ -20,6 +20,23 @@ export const agentConfig = {
   ffmpegPath: process.env.FFMPEG_PATH || "ffmpeg",
   /** Testing aid: keep a copy of each video in recordings/kept after it uploads. Off by default. */
   keepLocalCopies: process.env.KEEP_LOCAL_COPIES === "true",
+  /** Make each finished video smaller before it is uploaded (about 5 times smaller). Set to false to upload as recorded. */
+  compressUpload: process.env.COMPRESS_UPLOAD !== "false",
+  /** Quality of the compressed video: lower is sharper and larger. 28 looks close to the original. */
+  compressCrf: parseInt(process.env.COMPRESS_CRF || "28", 10),
+  /** Frames per second of the compressed video. 15 is enough to see what was packed. */
+  compressFps: parseInt(process.env.COMPRESS_FPS || "15", 10),
+  /**
+   * Ceiling on the video's data rate, in kilobits per second. 1000 means a 3-minute video is never more than
+   * about 22 MB, however busy the scene. Quiet scenes stay smaller. 0 turns the ceiling off.
+   */
+  compressMaxKbps: parseInt(process.env.COMPRESS_MAX_KBPS || "1000", 10),
+  /** Tallest picture kept, in pixels. A 720p or 1080p camera is left as it is; anything bigger (for example 4K) is reduced to this. */
+  compressMaxHeight: parseInt(process.env.COMPRESS_MAX_HEIGHT || "1080", 10),
+  /** ffmpeg speed setting: slower is smaller but takes longer. */
+  compressPreset: process.env.COMPRESS_PRESET || "medium",
+  /** CPU threads used for compressing, kept low so a recording in progress is not disturbed. */
+  compressThreads: parseInt(process.env.COMPRESS_THREADS || "2", 10),
   /** Live preview on the dashboard: pictures per second and width in pixels. More pictures per second looks smoother. */
   previewFps: parseInt(process.env.PREVIEW_FPS || "25", 10),
   previewWidth: parseInt(process.env.PREVIEW_WIDTH || "640", 10),

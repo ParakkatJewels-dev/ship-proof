@@ -27,7 +27,13 @@ export class AgentWsClient {
     agentLogger.info(`Connecting to Cloud WebSocket Gateway: ${wsUrl}`);
 
     try {
-      this.ws = new WebSocket(wsUrl);
+      // The server only accepts a camera device that presents its station key.
+      this.ws = new WebSocket(wsUrl, {
+        headers: {
+          "X-Station-Id": agentConfig.stationId,
+          "X-Station-Key": agentConfig.stationApiKey,
+        },
+      });
 
       this.ws.on("open", () => {
         agentLogger.info("Successfully connected to ShipProof Cloud Hub.");
@@ -153,6 +159,7 @@ export class AgentWsClient {
         ? CameraStatus.RECORDING
         : streamMonitor.getStatus(),
       pendingUploads: uploadQueue.pending().length,
+      uploads: uploadQueue.snapshot(),
       ...getCameraInfo(),
       recording: this.currentRecording(),
       review: this.currentReview(),
@@ -207,6 +214,11 @@ export class AgentWsClient {
       reviewToken: result.reviewToken,
       videoSeconds: result.videoSeconds,
     });
+  }
+
+  /** Sends a heartbeat now, outside the 10-second schedule, for example when an upload makes progress. */
+  heartbeatNow() {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) this.sendHeartbeat();
   }
 
   private startHeartbeat() {

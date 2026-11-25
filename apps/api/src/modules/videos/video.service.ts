@@ -1,192 +1,327 @@
 import { supabase, isMockSupabase } from "../../integrations/supabase/db.client.js";
 import { storageService } from "../../integrations/supabase/storage.client.js";
 import { shopifyClient } from "../../integrations/shopify/shopify.client.js";
-import { VideoRecord, VideoStatus } from "@shipproof/shared";
+import { VideoStatus } from "@shipproof/shared";
+import { config } from "../../config/env.config.js";
 import { logger } from "../../utils/logger.js";
+import { HttpError } from "../../utils/httpError.js";
+import { createWatchToken, hashWatchToken, isWellFormedToken } from "../../utils/watchToken.js";
+import { orderService } from "../orders/order.service.js";
+import { UUID_PATTERN } from "../orders/order.service.js";
+import { videoRepository as repo, StoredVideo } from "./video.repository.js";
 import { v4 as uuidv4 } from "uuid";
 
-const mockVideosStore = new Map<string, VideoRecord>();
+/** What the dashboard may know about a video. It never includes storage paths or link secrets. */
+export interface VideoSummary {
+  id: string;
+  orderId: string;
+  status: VideoStatus;
+  durationSeconds: number;
+  fileSizeBytes: number;
+  interrupted: boolean;
+  expiresAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  /** When the packer started recording. Falls back to the upload time for videos saved before this was kept. */
+  recordedAt: string;
+  /** Picture size and frame rate of the stored video; null for videos saved before these were kept. */
+  width: number | null;
+  height: number | null;
+  fps: number | null;
+  /** True once the customer watch link is on the Shopify order. */
+  shopifySynced: boolean;
+}
+
+/** What a customer's watch page may show for a link. */
+export type WatchResult =
+  | { state: "ready"; orderNumber: string; durationSeconds: number; playbackUrl: string; expiresAt: string | null }
+  | { state: "expired" | "unavailable"; orderNumber?: string };
+
+/** How long a playback address works. It is created fresh every time the video is opened. */
+const PLAYBACK_SECONDS = 60 * 60;
+
+export const toSummary = (v: StoredVideo): VideoSummary => ({
+  id: v.id,
+  orderId: v.orderId,
+  status: v.status,
+  durationSeconds: v.durationSeconds,
+  fileSizeBytes: v.fileSizeBytes,
+  interrupted: !!v.interrupted,
+  expiresAt: v.expiresAt ?? null,
+  createdAt: v.createdAt,
+  updatedAt: v.updatedAt,
+  recordedAt: v.recordedAt ?? v.createdAt,
+  width: v.width ?? null,
+  height: v.height ?? null,
+  fps: v.fps ?? null,
+  shopifySynced: !!v.shopifySyncedAt,
+});
+
+const watchUrl = (token: string) => `${config.publicWebUrl}/watch/${token}`;
 
 export class VideoService {
   /**
    * Generates a signed upload URL so the camera agent can upload directly to Supabase Storage.
    */
-  async requestUploadUrl(orderId: string, sessionId: string, stationId: string, fileName: string) {
+  async requestUploadUrl(orderId: string, sessionId: string, stationId: string, fileName: string, orderNumber?: string, recordedAt?: string) {
     const cleanFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const storagePath = `orders/${orderId}/${sessionId}_${cleanFileName}`;
+    orderId = await this.databaseOrderId(orderId, orderNumber);
 
     // The camera agent retries failed uploads, so asking again for the same recording must not create
     // a second video record. Hand out a fresh upload address for the existing one instead.
-    const existing = isMockSupabase
-      ? mockVideosStore.get(orderId)?.sessionId === sessionId
-        ? mockVideosStore.get(orderId)
-        : null
-      : (
-          await supabase.from("videos").select("id, storage_path").eq("session_id", sessionId).maybeSingle()
-        ).data;
+    const existing = await repo.findBySession(sessionId);
     if (existing) {
-      const existingPath = "storagePath" in existing ? existing.storagePath : existing.storage_path;
-      const retry = await storageService.createSignedUploadUrl(existingPath);
-      return { videoId: existing.id, storagePath: existingPath, signedUrl: retry.signedUrl, token: retry.token };
+      if (existing.orderId !== orderId) throw new HttpError(409, "This recording belongs to a different order.");
+      const retry = await storageService.createSignedUploadUrl(existing.storagePath);
+      if (existing.status === VideoStatus.ERROR) await repo.update(existing.id, { status: VideoStatus.UPLOADING });
+      return { videoId: existing.id, storagePath: existing.storagePath, signedUrl: retry.signedUrl, token: retry.token };
     }
 
+    const storagePath = `orders/${orderId}/${sessionId}_${cleanFileName}`;
     const videoId = uuidv4();
     const { signedUrl, token } = await storageService.createSignedUploadUrl(storagePath);
+    const now = new Date().toISOString();
 
-    const initialRecord: VideoRecord = {
+    await repo.insert({
       id: videoId,
       sessionId,
       orderId,
-      stationId,
+      stationId: await this.knownStationId(stationId),
       storagePath,
       fileName: cleanFileName,
       fileSizeBytes: 0,
       durationSeconds: 0,
       status: VideoStatus.UPLOADING,
-      retentionDays: 7,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+      retentionDays: config.retention.daysAfterDelivery,
+      orderNumber,
+      recordedAt: recordedAt ?? null,
+      createdAt: now,
+      updatedAt: now,
+    });
 
-    if (isMockSupabase) {
-      mockVideosStore.set(orderId, initialRecord);
-    } else {
-      await supabase.from("videos").insert({
-        id: videoId,
-        session_id: sessionId,
-        order_id: orderId,
-        station_id: stationId,
-        storage_path: storagePath,
-        file_name: cleanFileName,
-        status: VideoStatus.UPLOADING,
-        retention_days: 7,
-      });
-    }
-
-    return {
-      videoId,
-      storagePath,
-      signedUrl,
-      token,
-    };
+    return { videoId, storagePath, signedUrl, token };
   }
 
   /**
-   * Finalizes upload confirmation after camera agent finishes streaming the file.
+   * With a database, videos belong to a database order. While no real Shopify store is connected, the
+   * dashboard shows demo orders that have no database id; so that the whole flow can be tried, such an order is
+   * saved to the database the first time its video is uploaded. With a real store this never applies: an id
+   * that is not a database order is refused.
    */
-  async completeUpload(orderId: string, sessionId: string, fileSizeBytes: number, durationSeconds: number, interrupted = false) {
+  private async databaseOrderId(orderId: string, orderNumber?: string): Promise<string> {
+    if (isMockSupabase || UUID_PATTERN.test(orderId)) return orderId;
+    if (shopifyClient.isMock && orderNumber) {
+      const demo = await orderService.getOrder(orderNumber);
+      if (demo && UUID_PATTERN.test(demo.id)) return demo.id;
+    }
+    throw new HttpError(400, `Order ${orderId} is not an order in the database.`);
+  }
+
+  /** The camera sends the order id it was given; the record holds the database id. They can differ for demo orders. */
+  private async sameOrder(recordOrderId: string, givenOrderId: string): Promise<boolean> {
+    if (recordOrderId === givenOrderId || isMockSupabase) return recordOrderId === givenOrderId;
+    return (await orderService.resolveIdentity(givenOrderId))?.id === recordOrderId;
+  }
+
+  /** Stations register themselves rarely; a video must still be saved from one that is not in the table yet. */
+  private async knownStationId(stationId: string): Promise<string> {
+    if (isMockSupabase) return stationId;
+    const { data } = await supabase.from("stations").select("id").eq("id", stationId).maybeSingle();
+    return (data?.id ?? null) as string;
+  }
+
+  /**
+   * Finishes an upload: checks the file really is in storage, makes the video the order's current one,
+   * deletes the replaced ones, marks the order packed, and puts the watch link on the Shopify order.
+   * Safe to call again for the same recording.
+   */
+  async completeUpload(
+    orderId: string,
+    sessionId: string,
+    fileSizeBytes: number,
+    durationSeconds: number,
+    interrupted = false,
+    media?: { width?: number; height?: number; fps?: number },
+  ) {
     logger.info(`Video upload completed for order ${orderId}, size: ${fileSizeBytes} bytes${interrupted ? " (interrupted recording)" : ""}`);
 
-    // Generate signed download URL for playback
-    const existing = await this.getVideoForOrder(orderId);
-    if (!existing) {
-      throw new Error(`No video record found for order ${orderId}`);
+    const video = await repo.findBySession(sessionId);
+    if (!video) throw new HttpError(404, `No video record found for session ${sessionId}`);
+    if (!(await this.sameOrder(video.orderId, orderId))) throw new HttpError(409, "This recording belongs to a different order.");
+    orderId = video.orderId;
+
+    if (video.status === VideoStatus.ACTIVE && video.watchTokenHash && video.shopifySyncedAt) return toSummary(video);
+
+    // The agent says it finished; storage must agree before the video is called saved.
+    const storedSize = await storageService.statObject(video.storagePath);
+    if (storedSize === null) {
+      await repo.update(video.id, { status: VideoStatus.ERROR });
+      throw new HttpError(409, "The video file has not arrived in storage. Upload it again.");
+    }
+    if (storedSize > 0 && fileSizeBytes > 0 && storedSize < fileSizeBytes) {
+      await repo.update(video.id, { status: VideoStatus.ERROR });
+      throw new HttpError(409, "The video file in storage is incomplete. Upload it again.");
     }
 
-    const downloadUrl = await storageService.createSignedDownloadUrl(existing.storagePath, 7 * 86400);
-
-    const updatedRecord: VideoRecord = {
-      ...existing,
-      fileSizeBytes,
+    const { token, hash } = createWatchToken();
+    const now = new Date().toISOString();
+    await repo.update(video.id, {
+      status: VideoStatus.ACTIVE,
+      fileSizeBytes: storedSize || fileSizeBytes,
       durationSeconds,
       interrupted,
-      status: VideoStatus.ACTIVE,
-      downloadUrl,
-      updatedAt: new Date().toISOString(),
-    };
+      watchTokenHash: hash,
+      shopifySyncedAt: null,
+      downloadUrl: undefined,
+      ...(media?.width && media.height ? { width: media.width, height: media.height } : {}),
+      ...(media?.fps ? { fps: media.fps } : {}),
+    });
 
-    if (isMockSupabase) {
-      mockVideosStore.set(orderId, updatedRecord);
-    } else {
-      await supabase
-        .from("videos")
-        .update({
-          file_size_bytes: fileSizeBytes,
-          duration_seconds: durationSeconds,
-          interrupted,
-          status: VideoStatus.ACTIVE,
-          download_url: downloadUrl,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("order_id", orderId);
+    await this.removeReplacedVideos(orderId, video.id);
+    await orderService.markPacked(orderId, now);
+    await this.publishToShopify({ ...video, watchTokenHash: hash }, token, now);
+
+    return toSummary((await repo.findBySession(sessionId)) ?? video);
+  }
+
+  /** A retake or a trimmed version replaces the order's earlier videos, which must not stay in storage. */
+  private async removeReplacedVideos(orderId: string, keepId: string) {
+    for (const old of await repo.listByOrder(orderId)) {
+      if (old.id === keepId || old.status === VideoStatus.DELETED) continue;
+      await this.deleteFileAndMark(old, { keepLink: false });
     }
+  }
 
-    // Attach link into Shopify order metafield
-    await shopifyClient.attachVideoProofMetafield(orderId, downloadUrl);
-
-    return updatedRecord;
+  /** Writes the packed status and the watch link to the Shopify order. If that fails, the retry job tries again. */
+  private async publishToShopify(video: StoredVideo, token: string, packedAt: string) {
+    try {
+      const identity = await orderService.resolveIdentity(video.orderId);
+      if (!identity) {
+        logger.error(`Cannot tell Shopify about the video: order ${video.orderId} is unknown.`);
+        return;
+      }
+      const ok = await shopifyClient.setPackingProof(identity.shopifyOrderId, { watchUrl: watchUrl(token), packedAt });
+      if (ok) await repo.update(video.id, { shopifySyncedAt: new Date().toISOString() });
+    } catch (err: any) {
+      logger.error(`Shopify update for video ${video.id} failed; it will be retried:`, err.message);
+    }
   }
 
   /**
-   * Get packing video for an order.
+   * Videos whose Shopify update failed get a new link and another try. No one has seen the old link,
+   * and the secret cannot be recovered from its hash, so a new one is made.
    */
-  async getVideoForOrder(orderId: string): Promise<VideoRecord | null> {
-    if (isMockSupabase) {
-      return mockVideosStore.get(orderId) || null;
+  async retryShopifySync(limit = 20): Promise<number> {
+    let done = 0;
+    for (const video of await repo.listUnsynced(limit)) {
+      const { token, hash } = createWatchToken();
+      await repo.update(video.id, { watchTokenHash: hash });
+      await this.publishToShopify({ ...video, watchTokenHash: hash }, token, video.updatedAt);
+      if ((await repo.findBySession(video.sessionId))?.shopifySyncedAt) done++;
     }
+    // Links to videos that were deleted but could not be removed from Shopify yet.
+    for (const video of await repo.listStaleShopifyLinks(limit)) {
+      // A newer video for the same order owns the link now; leave it alone.
+      if (await repo.findLatestByOrder(video.orderId)) {
+        await repo.update(video.id, { shopifySyncedAt: null });
+        continue;
+      }
+      const identity = await orderService.resolveIdentity(video.orderId);
+      if (identity && (await shopifyClient.clearPackingVideo(identity.shopifyOrderId))) {
+        await repo.update(video.id, { shopifySyncedAt: null });
+      }
+    }
+    return done;
+  }
 
-    const { data } = await supabase
-      .from("videos")
-      .select("*")
-      .eq("order_id", orderId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+  /**
+   * The database id videos are filed under. The dashboard may hold a demo id or a Shopify id for the same
+   * order (see databaseOrderId), so look the order up first.
+   */
+  async orderIdForVideos(orderId: string): Promise<string> {
+    if (isMockSupabase || UUID_PATTERN.test(orderId)) return orderId;
+    return (await orderService.resolveIdentity(orderId))?.id ?? orderId;
+  }
 
-    if (!data) return null;
+  /** The newest video of an order, without storage details. */
+  async getSummaryForOrder(orderId: string): Promise<VideoSummary | null> {
+    const video = await repo.findLatestByOrder(await this.orderIdForVideos(orderId));
+    return video ? toSummary(video) : null;
+  }
+
+  /** A temporary address to play the order's current video from. Only for signed-in staff. */
+  async getPlayback(orderId: string): Promise<{ url: string; durationSeconds: number } | null> {
+    const video = await repo.findLatestByOrder(await this.orderIdForVideos(orderId));
+    if (!video || video.status !== VideoStatus.ACTIVE) return null;
+    return { url: await storageService.createSignedDownloadUrl(video.storagePath, PLAYBACK_SECONDS), durationSeconds: video.durationSeconds };
+  }
+
+  /**
+   * Opens a customer watch link. The token is the only credential: it identifies exactly one video of
+   * exactly one order, so a customer cannot reach another order's video. A fresh temporary playback
+   * address is made on every visit, so no storage address is ever kept or shown for long.
+   */
+  async resolveWatch(token: string): Promise<WatchResult> {
+    if (!isWellFormedToken(token)) return { state: "unavailable" };
+    const video = await repo.findByTokenHash(hashWatchToken(token));
+    if (!video) return { state: "unavailable" };
+
+    const orderNumber = (await orderService.resolveIdentity(video.orderId))?.orderNumber || video.orderNumber || undefined;
+    const due = video.expiresAt ? new Date(video.expiresAt).getTime() <= Date.now() : false;
+    if (video.status === VideoStatus.DELETED || video.status === VideoStatus.EXPIRED || due) {
+      return { state: "expired", orderNumber };
+    }
+    if (video.status !== VideoStatus.ACTIVE) return { state: "unavailable" };
 
     return {
-      id: data.id,
-      sessionId: data.session_id,
-      orderId: data.order_id,
-      stationId: data.station_id,
-      storagePath: data.storage_path,
-      fileName: data.file_name,
-      fileSizeBytes: data.file_size_bytes,
-      durationSeconds: data.duration_seconds,
-      status: data.status as VideoStatus,
-      downloadUrl: data.download_url,
-      retentionDays: data.retention_days,
-      interrupted: data.interrupted ?? false,
-      expiresAt: data.expires_at,
-      deletedAt: data.deleted_at,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
+      state: "ready",
+      orderNumber: orderNumber ?? "",
+      durationSeconds: video.durationSeconds,
+      playbackUrl: await storageService.createSignedDownloadUrl(video.storagePath, PLAYBACK_SECONDS),
+      expiresAt: video.expiresAt ?? null,
     };
   }
 
+  async listVideos(): Promise<VideoSummary[]> {
+    return (await repo.listRecent(50)).map(toSummary);
+  }
+
   /**
-   * List all videos for admin monitoring.
+   * Deletes the stored file and marks the record deleted. With keepLink the watch link still resolves
+   * (to a "removed" message); otherwise the link is retired because a newer video replaces it.
    */
-  async listVideos(): Promise<VideoRecord[]> {
-    if (isMockSupabase) {
-      return Array.from(mockVideosStore.values());
+  async deleteFileAndMark(video: StoredVideo, opts: { keepLink: boolean }): Promise<boolean> {
+    const deleted = await storageService.deleteFile(video.storagePath);
+    if (!deleted) return false;
+    await repo.update(video.id, {
+      status: VideoStatus.DELETED,
+      deletedAt: new Date().toISOString(),
+      downloadUrl: undefined,
+      ...(opts.keepLink ? {} : { watchTokenHash: null }),
+    });
+    return true;
+  }
+
+  /**
+   * Retention: deletes videos whose period is over (30 days after the real delivery date, 60 after a return) and takes the
+   * Watch button off the Shopify order. Returns how many videos were deleted.
+   */
+  async purgeExpired(limit = 100): Promise<number> {
+    let purged = 0;
+    for (const video of await repo.listDueForDeletion(limit)) {
+      if (!(await this.deleteFileAndMark(video, { keepLink: true }))) continue;
+      purged++;
+      logger.info(`Purged expired video ${video.id} (order ${video.orderId})`);
+      try {
+        const identity = await orderService.resolveIdentity(video.orderId);
+        const cleared = identity ? await shopifyClient.clearPackingVideo(identity.shopifyOrderId) : false;
+        // Until Shopify confirms, the video is flagged so the retry job removes the link later.
+        await repo.update(video.id, { shopifySyncedAt: cleared ? null : (video.shopifySyncedAt ?? new Date().toISOString()) });
+      } catch (err: any) {
+        logger.error(`Could not remove the video link from Shopify for video ${video.id}:`, err.message);
+      }
     }
-
-    const { data } = await supabase
-      .from("videos")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(50);
-
-    return (data || []).map((d: any) => ({
-      id: d.id,
-      sessionId: d.session_id,
-      orderId: d.order_id,
-      stationId: d.station_id,
-      storagePath: d.storage_path,
-      fileName: d.file_name,
-      fileSizeBytes: d.file_size_bytes,
-      durationSeconds: d.duration_seconds,
-      status: d.status as VideoStatus,
-      downloadUrl: d.download_url,
-      retentionDays: d.retention_days,
-      interrupted: d.interrupted ?? false,
-      expiresAt: d.expires_at,
-      deletedAt: d.deleted_at,
-      createdAt: d.created_at,
-      updatedAt: d.updated_at,
-    }));
+    return purged;
   }
 }
 

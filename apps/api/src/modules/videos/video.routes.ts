@@ -1,15 +1,20 @@
 import { Router } from "express";
+import { UserRole } from "@shipproof/shared";
 import { videoController } from "./video.controller.js";
-import { authenticate } from "../../middlewares/auth.middleware.js";
+import { authenticate, requireRole } from "../../middlewares/auth.middleware.js";
 
 const router = Router();
 
-// Camera agent endpoints
-router.post("/upload-url", authenticate, (req, res) => videoController.requestUploadUrl(req, res));
-router.post("/complete", authenticate, (req, res) => videoController.completeUpload(req, res));
+// Camera agent endpoints: only a camera station may call these.
+router.post("/upload-url", authenticate, requireRole(UserRole.STATION), (req, res) => videoController.requestUploadUrl(req, res));
+router.post("/complete", authenticate, requireRole(UserRole.STATION), (req, res) => videoController.completeUpload(req, res));
 
-// Admin & customer queries
-router.get("/order/:orderId", (req, res) => videoController.getVideoForOrder(req, res));
-router.get("/", authenticate, (req, res) => videoController.listVideos(req, res));
+// Dashboard endpoints: signed-in staff only. None of them return a storage address except playback,
+// which is a short-lived link made on request.
+const staff = [authenticate, requireRole(UserRole.ADMIN, UserRole.PACKER)];
+router.get("/order/:orderId", ...staff, (req, res) => videoController.getVideoForOrder(req, res));
+router.get("/order/:orderId/playback", ...staff, (req, res) => videoController.getPlayback(req, res));
+router.post("/order/:orderId/trim", ...staff, (req, res) => videoController.trim(req, res));
+router.get("/", ...staff, (req, res) => videoController.listVideos(req, res));
 
 export default router;

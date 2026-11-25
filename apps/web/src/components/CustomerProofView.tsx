@@ -69,7 +69,7 @@ export function CustomerProofView() {
           <div>
             <span className="font-bold block">Security & Privacy Assurance</span>
             <span className="text-[11px] text-blue-700">
-              This recording is securely archived and accessible for 7 days post-delivery.
+              This recording is securely archived and accessible for 30 days after delivery.
             </span>
           </div>
         </div>

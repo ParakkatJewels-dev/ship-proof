@@ -15,7 +15,10 @@ export interface ShopifyConnection {
  */
 export function useOrders(limit = 50) {
   const [orders, setOrders] = useState<OrderRecord[]>(DEMO_ORDERS);
-  const [shopify, setShopify] = useState<ShopifyConnection>({ state: "loading", label: "Connecting to Shopify…" });
+  const [shopify, setShopify] = useState<ShopifyConnection>({
+    state: "loading",
+    label: "Connecting to Shopify…",
+  });
   const [searching, setSearching] = useState(false);
   const [searchMessage, setSearchMessage] = useState<string | null>(null);
 
@@ -26,16 +29,44 @@ export function useOrders(limit = 50) {
         const status = await fetchShopifyStatus();
         if (cancelled) return;
         if (!status.connected) {
-          setShopify({ state: "demo", label: "Demo data · Shopify not connected" });
+          setShopify({
+            state: "demo",
+            label: "Demo data · Shopify not connected",
+          });
+          // The demo orders live in the browser, but an order packed during a test is saved in the database.
+          // Show those as Packed, so the status survives a reload just as it will with a real store.
+          try {
+            const saved = await fetchOrders(limit);
+            const packed = new Set(
+              saved
+                .filter((o) => o.status === "Packed")
+                .map((o) => o.orderNumber),
+            );
+            if (!cancelled && packed.size) {
+              setOrders((prev) =>
+                prev.map((o) =>
+                  packed.has(o.orderNumber) ? { ...o, status: "Packed" } : o,
+                ),
+              );
+            }
+          } catch {
+            // The API may be unreachable; the plain demo list is fine.
+          }
           return;
         }
         const live = await fetchOrders(limit);
         if (cancelled) return;
-        const scopesNote = status.missingScopes?.length ? ` · missing ${status.missingScopes.join(", ")}` : "";
-        setShopify({ state: "live", label: `Shopify · ${status.shopName}${scopesNote}` });
+        const scopesNote = status.missingScopes?.length
+          ? ` · missing ${status.missingScopes.join(", ")}`
+          : "";
+        setShopify({
+          state: "live",
+          label: `Shopify · ${status.shopName}${scopesNote}`,
+        });
         setOrders(live);
       } catch {
-        if (!cancelled) setShopify({ state: "demo", label: "Demo data · API not reachable" });
+        if (!cancelled)
+          setShopify({ state: "demo", label: "Demo data · API not reachable" });
       }
     })();
     return () => {
@@ -67,14 +98,27 @@ export function useOrders(limit = 50) {
 
   /** Updates one order's status locally, for example when packing starts or finishes. */
   const updateStatus = (orderId: string, status: OrderRecord["status"]) =>
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
+    setOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, status } : o)),
+    );
 
-  return { orders, shopify, searching, searchMessage, setSearchMessage, lookUp, updateStatus };
+  return {
+    orders,
+    shopify,
+    searching,
+    searchMessage,
+    setSearchMessage,
+    lookUp,
+    updateStatus,
+  };
 }
 
 /** Case-insensitive match on order number or customer name. */
 export function matchesQuery(order: OrderRecord, query: string) {
   const q = query.trim().toLowerCase().replace(/^#/, "");
   if (!q) return true;
-  return order.orderNumber.toLowerCase().replace(/^#/, "").includes(q) || order.customerName.toLowerCase().includes(q);
+  return (
+    order.orderNumber.toLowerCase().replace(/^#/, "").includes(q) ||
+    order.customerName.toLowerCase().includes(q)
+  );
 }

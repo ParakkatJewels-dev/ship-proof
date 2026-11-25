@@ -22,6 +22,8 @@ export const config = {
   supabase: {
     url: process.env.SUPABASE_URL || "https://mock.supabase.co",
     serviceKey: process.env.SUPABASE_SERVICE_ROLE_KEY || "mock-key",
+    /** The public (publishable) key. Used only for signing people in; it can do nothing else. */
+    publishableKey: process.env.SUPABASE_PUBLISHABLE_KEY || "",
     bucket: process.env.SUPABASE_STORAGE_BUCKET || "packing-videos",
   },
   shopify: {
@@ -36,8 +38,31 @@ export const config = {
     /** Webhooks from a Dev Dashboard app are signed with the app's client secret. */
     webhookSecret: process.env.SHOPIFY_WEBHOOK_SECRET || shopifyClientSecret,
   },
+  /** Public address of the web app. Customer watch links are built from it. */
+  publicWebUrl: (process.env.PUBLIC_WEB_URL || "http://localhost:3000").replace(/\/$/, ""),
+  /** Websites allowed to call this API from a browser, comma separated. */
+  webOrigins: (process.env.WEB_ORIGINS || process.env.PUBLIC_WEB_URL || "http://localhost:3000")
+    .split(",")
+    .map((o) => o.trim().replace(/\/$/, ""))
+    .filter(Boolean),
+  /** Shared secret the camera agents send. In production every request without it is refused. */
+  stationApiKey: process.env.STATION_API_KEY || "",
+  /** ffmpeg on the machine that runs this API, used to trim videos stored in the cloud. */
+  ffmpegPath: process.env.FFMPEG_PATH || "ffmpeg",
   retention: {
-    daysAfterDelivery: parseInt(process.env.VIDEO_RETENTION_DAYS || "7", 10),
+    /** Days a video is kept after the order is delivered. The database (table retention_policy) decides the real date. */
+    daysAfterDelivery: parseInt(process.env.VIDEO_RETENTION_DAYS || "30", 10),
+    /** Days a video is kept after an order is returned to origin (RTO). */
+    daysAfterReturn: parseInt(process.env.RTO_RETENTION_DAYS || "60", 10),
+    /**
+     * Shopify has no "returned to origin" status. An order counts as returned when it carries any of these tags
+     * (comma separated, not case sensitive, whole tag only). The defaults are the tags Shiprocket adds when a
+     * return starts: the 60 days are counted from the start of the return.
+     */
+    rtoTags: (process.env.RTO_TAGS || "RTO,RTO Initiated via Shiprocket")
+      .split(",")
+      .map((t) => t.trim().toLowerCase().replace(/\s+/g, " "))
+      .filter(Boolean),
   },
 };
 

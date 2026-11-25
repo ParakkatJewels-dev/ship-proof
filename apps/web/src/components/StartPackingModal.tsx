@@ -70,7 +70,7 @@ export function StartPackingModal({ onClose }: { onClose: () => void }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/50 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
       <div

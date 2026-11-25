@@ -206,7 +206,7 @@ export function AdminDashboard() {
               Video Verification Records & Retention Lifecycle
             </h3>
             <p className="text-xs text-zinc-500">
-              Videos are retained for exactly 7 days after customer delivery, then purged automatically.
+              Videos are kept for 30 days after customer delivery (60 days after a return to origin), then deleted automatically.
             </p>
           </div>
         </div>

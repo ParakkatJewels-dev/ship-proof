@@ -8,8 +8,18 @@ import {
   trimSavedVideo,
   type SavedVideo,
 } from "../lib/savedVideo";
+import {
+  fetchCloudPlayback,
+  trimCloudVideo,
+  type CloudPlayback,
+} from "../lib/shipproofApi";
 import { showToast } from "../lib/alerts";
 import { TrimPlayer, type TrimRange } from "./TrimPlayer";
+
+/** Where the video is played from: the cloud copy when there is one, otherwise a copy still on the packing computer. */
+type Source =
+  | { kind: "cloud"; playback: CloudPlayback }
+  | { kind: "local"; video: SavedVideo };
 
 /** Plays an order's saved video, or lets the packer cut it down and save the shorter version. */
 export function SavedVideoModal({
@@ -21,25 +31,39 @@ export function SavedVideoModal({
   mode: "view" | "trim";
   onClose: () => void;
 }) {
-  const [video, setVideo] = useState<SavedVideo | null | undefined>(undefined);
+  const [source, setSource] = useState<Source | null | undefined>(undefined);
   const [duration, setDuration] = useState(0);
   const [trim, setTrim] = useState<TrimRange>({ start: 0, end: 0 });
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    fetchSavedVideo(order.orderNumber).then((v) => {
-      if (cancelled) return;
-      setVideo(v);
-      if (v && v.durationSeconds > 0) {
-        setDuration(v.durationSeconds);
-        setTrim({ start: 0, end: v.durationSeconds });
+    (async () => {
+      // The stored copy is the one that counts, so it comes first. The packing computer's copy is the
+      // fallback for a video that has not finished uploading yet.
+      const cloud = await fetchCloudPlayback(order.id);
+      let found: Source | null = cloud
+        ? { kind: "cloud", playback: cloud }
+        : null;
+      if (!found) {
+        const local = await fetchSavedVideo(order.orderNumber);
+        if (local) found = { kind: "local", video: local };
       }
-    });
+      if (cancelled) return;
+      setSource(found);
+      const seconds =
+        found?.kind === "cloud"
+          ? found.playback.durationSeconds
+          : (found?.video.durationSeconds ?? 0);
+      if (seconds > 0) {
+        setDuration(seconds);
+        setTrim({ start: 0, end: seconds });
+      }
+    })();
     return () => {
       cancelled = true;
     };
-  }, [order.orderNumber]);
+  }, [order.id, order.orderNumber]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -50,27 +74,28 @@ export function SavedVideoModal({
   }, [onClose, saving]);
 
   const save = async () => {
-    if (!video) return;
+    if (!source) return;
     setSaving(true);
     try {
-      await trimSavedVideo(order, video.token, trim);
+      if (source.kind === "cloud") await trimCloudVideo(order.id, trim);
+      else await trimSavedVideo(order, source.video.token, trim);
       onClose();
-      void showToast(
-        "ok",
-        `Trimmed video for ${order.orderNumber} saved and uploading.`,
-      );
+      void showToast("ok", `Trimmed video for ${order.orderNumber} saved.`);
     } catch (err) {
       setSaving(false);
       void showToast(
         "error",
-        `Could not trim the video: ${err instanceof Error ? err.message : "the camera agent did not answer"}.`,
+        `Could not trim the video: ${err instanceof Error ? err.message : "the server did not answer"}.`,
       );
     }
   };
 
+  const url =
+    source?.kind === "cloud" ? source.playback.url : source?.video.url;
+
   return (
     <div
-      className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/40"
+      className="fixed inset-0 z-60 flex items-center justify-center p-4 modal-backdrop"
       onClick={() => !saving && onClose()}
     >
       <div
@@ -94,31 +119,28 @@ export function SavedVideoModal({
         </h2>
 
         <div className="mt-4">
-          {video === undefined ? (
+          {source === undefined ? (
             <p className="py-16 text-center text-sm text-muted">
               Loading the video…
             </p>
-          ) : video === null ? (
+          ) : source === null || !url ? (
             <div className="py-10 text-center">
-              <p className="font-semibold">
-                The video isn&apos;t available on this computer
-              </p>
+              <p className="font-semibold">This video isn&apos;t available</p>
               <p className="text-sm text-muted mt-1.5 max-w-sm mx-auto">
-                Only videos still stored at this packing station can be played
-                or trimmed here. Videos that have been uploaded and cleared from
-                this computer are not available yet.
+                It may not have finished uploading yet, or it has been removed
+                after the retention period.
               </p>
             </div>
           ) : mode === "view" ? (
             <video
-              src={video.url}
+              src={url}
               controls
               autoPlay
               className="w-full rounded-2xl bg-black max-h-[60vh]"
             />
           ) : (
             <TrimPlayer
-              src={video.url}
+              src={url}
               trim={trim}
               duration={duration}
               onDuration={(d) => {
@@ -131,7 +153,7 @@ export function SavedVideoModal({
           )}
         </div>
 
-        {mode === "trim" && video && (
+        {mode === "trim" && source && url && (
           <div className="mt-5 flex justify-end gap-3">
             <button
               onClick={onClose}

@@ -32,6 +32,7 @@ export class StationController {
         fps: hb?.fps,
         cameraStatus: hb?.cameraStatus || "CONNECTED",
         pendingUploads: hb?.pendingUploads ?? 0,
+        uploads: hb?.uploads ?? [],
         recording: hb?.recording ?? null,
         review: hb?.review ?? null,
         connectedAt: active.connectedAt,

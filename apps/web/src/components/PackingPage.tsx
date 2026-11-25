@@ -364,7 +364,7 @@ export function PackingPage() {
                       <Square className="w-4 h-4" fill="currentColor" />
                     )}
                     {stopping
-                      ? "Saving video…"
+                      ? "Finishing…"
                       : starting
                         ? "Starting…"
                         : "Finish recording"}

@@ -15,13 +15,17 @@ import { usePacking } from "../lib/usePacking";
 import { StartPackingModal } from "./StartPackingModal";
 import {
   closeAlert,
-  showSavingProgress,
+  closeCameraProblem,
+  isAlertOpen,
+  showCameraProblem,
   showStartProblem,
   showStartingCamera,
   showToast,
 } from "../lib/alerts";
 import { diagnose, type StartIssue } from "../lib/startIssues";
 import { useBarcodeScanner } from "../lib/useBarcodeScanner";
+import { pushToast } from "../lib/toasts";
+import { Toasts } from "./Toasts";
 
 interface AppDataValue {
   orders: ReturnType<typeof useOrders>;
@@ -36,6 +40,9 @@ interface AppDataValue {
 }
 
 const AppDataContext = createContext<AppDataValue | null>(null);
+
+/** Reading the same barcode twice within this many seconds is one scan read twice, not "start" then "finish". */
+const MIN_SECONDS_BEFORE_FINISH_SCAN = 5;
 
 /**
  * Orders, the connected camera and the current packing session, shared by every page so a recording
@@ -57,6 +64,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const [modalOpen, setModalOpen] = useState(false);
   // A scan is handled one at a time: further scans are ignored until it finishes.
   const scanning = useRef(false);
+  // A barcode scanned while the last recording is still being closed. It starts as soon as the camera is free.
+  const queuedScan = useRef<string | null>(null);
   // A problem found before starting, with what to do once it is fixed.
   const [preflight, setPreflight] = useState<{
     issue: StartIssue;
@@ -137,15 +146,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     };
   }, [navLocked]);
 
-  // From pressing Finish until the video is saved, show a progress bar. The success (or error) alert below
-  // replaces it, so success only appears once the video is really saved.
-  const { finishing } = packing;
-  const savingOrder = packing.session.orderNumber;
-  useEffect(() => {
-    if (finishing) void showSavingProgress(savingOrder ?? "the order");
-  }, [finishing, savingOrder]);
-
-  // Messages show as a SweetAlert toast, then are cleared.
+  // Messages from packing: good news is a small corner notice, problems are an alert box. Then cleared.
   const { message, setMessage } = packing;
   useEffect(() => {
     if (!message) return;
@@ -174,16 +175,56 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     });
 
   /**
-   * A barcode scan: find the order and start recording it straight away. Anything that stops it
-   * (no order, already packed, another recording running) is explained instead.
+   * A barcode scan works like a switch:
+   *  - the first scan of an order finds it and starts recording straight away;
+   *  - scanning the same order's barcode again finishes the recording and saves the video.
+   * Anything that stops a scan (no order, already packed, another order is being recorded, scanned too soon)
+   * is explained instead.
    */
   const handleScan = async (raw: string) => {
     const code = raw.trim().replace(/^#/, "");
-    if (!code || scanning.current) return;
-    if (packing.session.status !== "idle") {
+    if (!code) return;
+    // A new scan dismisses any alert box that is still open, so the packer never has to click it away first.
+    if (isAlertOpen()) closeAlert();
+    if (scanning.current) return;
+
+    const current = packing.session;
+    if (current.status === "recording") {
+      const sameOrder =
+        current.orderNumber?.replace(/^#/, "") === code ||
+        current.orderId === code ||
+        !!current.orderId?.endsWith(`/${code}`);
+      if (sameOrder) {
+        // A scanner can read a label twice in a row. Ignore a second read right after the first.
+        if (packing.elapsedSeconds < MIN_SECONDS_BEFORE_FINISH_SCAN) return;
+        packing.finish();
+        return;
+      }
       void showToast(
         "error",
-        `Finish packing ${packing.session.orderNumber} before scanning another order.`,
+        `Scan ${current.orderNumber} again to finish it before starting another order.`,
+        "Recording in progress",
+      );
+      return;
+    }
+    if (
+      current.status === "stopping" ||
+      current.status === "saving" ||
+      current.status === "review"
+    ) {
+      // The last video is being closed (a second or two). The compressing and uploading carry on in the
+      // background, so there is no need to wait: remember this scan and start it as soon as the camera is free.
+      queuedScan.current = code;
+      pushToast(
+        "info",
+        `Scanned ${raw.trim()}. It starts as soon as ${current.orderNumber} is closed.`,
+      );
+      return;
+    }
+    if (current.status !== "idle") {
+      void showToast(
+        "error",
+        `Finish packing ${current.orderNumber} before scanning another order.`,
         "Recording in progress",
       );
       return;
@@ -202,7 +243,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         orders.setSearchMessage(null);
       }
       if (!order) {
-        await showToast(
+        void showToast(
           "error",
           `No order #${code} was found${orders.shopify.state === "live" ? " in Shopify" : ""}. Scan again or enter the number by hand.`,
           "Order not found",
@@ -210,7 +251,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         return;
       }
       if (order.status !== "Pending") {
-        await showToast(
+        void showToast(
           "error",
           `Order ${order.orderNumber} is already ${order.status.toLowerCase()}. To record it again, use Retake on the Orders page.`,
           "Already packed",
@@ -224,6 +265,47 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   };
   useBarcodeScanner(handleScan);
 
+  // Run the scan that was waiting for the camera.
+  const handleScanRef = useRef(handleScan);
+  useEffect(() => {
+    handleScanRef.current = handleScan;
+  });
+  const sessionIdle = packing.session.status === "idle";
+  useEffect(() => {
+    if (!sessionIdle || !queuedScan.current) return;
+    const code = queuedScan.current;
+    queuedScan.current = null;
+    void handleScanRef.current(code);
+  }, [sessionIdle]);
+
+  // When the camera is missing or not working, open an alert box by itself that says what is wrong and what to
+  // do. It is shown once per problem: if it is closed it stays closed until the camera has worked again, and
+  // it closes by itself as soon as the camera is back. It never replaces another alert box that is on screen,
+  // and it stays out of the way while an order is being packed.
+  const cameraIssue =
+    device.reachable === null ? null : diagnose(device.reachable, device.info);
+  const cameraIssueKind = cameraIssue?.kind ?? null;
+  const cameraAlertClosedFor = useRef<string | null>(null);
+  const packingIdle = packing.session.status === "idle";
+  useEffect(() => {
+    if (!cameraIssue || !cameraIssueKind) {
+      cameraAlertClosedFor.current = null;
+      closeCameraProblem();
+      return;
+    }
+    if (
+      !packingIdle ||
+      cameraAlertClosedFor.current === cameraIssueKind ||
+      isAlertOpen()
+    )
+      return;
+    void showCameraProblem(cameraIssue, checkAgain).then(() => {
+      cameraAlertClosedFor.current = cameraIssueKind;
+    });
+    // Runs on every camera check (every few seconds), so an alert box that was in the way is tried again.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cameraIssueKind, device.info, device.reachable, packingIdle]);
+
   return (
     <AppDataContext.Provider
       value={{
@@ -236,6 +318,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       }}
     >
       {children}
+
+      <Toasts />
 
       {modalOpen && <StartPackingModal onClose={() => setModalOpen(false)} />}
     </AppDataContext.Provider>

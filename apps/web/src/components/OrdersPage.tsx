@@ -3,20 +3,25 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, Play, RotateCcw, Scissors } from "lucide-react";
+import { Eye, Info, Play, RotateCcw, Scissors } from "lucide-react";
 import type { OrderRecord } from "../lib/orders";
 import { matchesQuery } from "../lib/useOrders";
 import { useAppData } from "./AppData";
 import { AppShell, PageHeader } from "./AppShell";
 import { Card, OrdersTable } from "./ui";
 import { SavedVideoModal } from "./SavedVideoModal";
+import { VideoPropertiesModal } from "./VideoPropertiesModal";
 import { RowMenu } from "./RowMenu";
+import { Pagination } from "./Pagination";
+import { clampPage, pageCount } from "../lib/pagination";
 import { confirmRetake } from "../lib/alerts";
 
 const TABS = ["All", "Pending", "Packed"] as const;
 type Filter = (typeof TABS)[number];
 
-const PAGE_SIZE = 5;
+/** Rows per page the packer can choose from, and the one used at first. */
+const PAGE_SIZES = [5, 10, 20];
+const DEFAULT_PAGE_SIZE = 5;
 
 /** Reads ?status=all|pending|packed (any case) into a filter tab. With no status, All is shown first. */
 function filterFromParam(param: string | null): Filter {
@@ -40,6 +45,7 @@ export function OrdersPage() {
     lookUp,
   } = ordersData;
   const busy = packing.session.status !== "idle";
+  const [propertiesOf, setPropertiesOf] = useState<OrderRecord | null>(null);
   const [saved, setSaved] = useState<{
     order: OrderRecord;
     mode: "view" | "trim";
@@ -95,6 +101,11 @@ export function OrdersPage() {
                 onSelect: () => setSaved({ order, mode: "view" }),
               },
               {
+                label: "Properties",
+                icon: Info,
+                onSelect: () => setPropertiesOf(order),
+              },
+              {
                 label: "Retake",
                 icon: RotateCcw,
                 danger: true,
@@ -133,11 +144,13 @@ export function OrdersPage() {
     );
   };
   const [searchQuery, setSearchQuery] = useState("");
-  const [shown, setShown] = useState({ key: "", count: PAGE_SIZE });
-  const resetShown = () => setShown({ key: "", count: PAGE_SIZE });
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  // The page is tied to the tab + search it was chosen for, so any other list starts on page 1.
+  const [pageState, setPageState] = useState({ key: "", page: 1 });
+  const resetPage = () => setPageState({ key: "", page: 1 });
 
   const setFilter = (next: Filter) => {
-    resetShown();
+    resetPage();
     router.replace(`/orders?status=${next.toLowerCase()}`, { scroll: false });
   };
 
@@ -152,12 +165,15 @@ export function OrdersPage() {
       (filter === "All" || o.status === filter) && matchesQuery(o, searchQuery),
   );
 
-  // Show five orders at first; "Show more" adds five at a time. Changing the tab or search starts over at five.
-  // The count is tied to the tab + search it was expanded for, so any other list starts at five.
+  // One page of the list at a time. The page is kept inside the list, so when an order leaves it (for example
+  // once it is packed) you are never left on a page that no longer exists.
   const listKey = `${filter}|${searchQuery.trim().toLowerCase()}`;
-  const shownCount = shown.key === listKey ? shown.count : PAGE_SIZE;
-  const shownOrders = visible.slice(0, shownCount);
-  const remaining = visible.length - shownOrders.length;
+  const totalPages = pageCount(visible.length, pageSize);
+  const page = clampPage(
+    pageState.key === listKey ? pageState.page : 1,
+    totalPages,
+  );
+  const shownOrders = visible.slice((page - 1) * pageSize, page * pageSize);
 
   const handleSearch = async () => {
     if (!searchQuery.trim() || visible.length > 0) return;
@@ -176,7 +192,7 @@ export function OrdersPage() {
         onSearchChange={(v) => {
           setSearchQuery(v);
           setSearchMessage(null);
-          resetShown();
+          resetPage();
         }}
         onSearchSubmit={handleSearch}
       />
@@ -329,26 +345,29 @@ export function OrdersPage() {
           )}
 
           {visible.length > 0 && (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs text-muted">
-                Showing {shownOrders.length} of {visible.length}{" "}
-                {filter === "All" ? "" : `${filter.toLowerCase()} `}
-                orders{shopify.state === "live" ? " from the last 60 days" : ""}
-              </p>
-              {remaining > 0 && (
-                <button
-                  onClick={() =>
-                    setShown({ key: listKey, count: shownCount + PAGE_SIZE })
-                  }
-                  className="px-4 py-2 rounded-full bg-canvas hover:bg-[#E1E5EF] text-sm font-medium cursor-pointer transition-colors"
-                >
-                  Show {Math.min(PAGE_SIZE, remaining)} more
-                </button>
-              )}
-            </div>
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              pageSizes={PAGE_SIZES}
+              total={visible.length}
+              noun={`${filter === "All" ? "" : `${filter.toLowerCase()} `}orders${shopify.state === "live" ? " from the last 60 days" : ""}`}
+              onPage={(next) => setPageState({ key: listKey, page: next })}
+              onPageSize={(size) => {
+                setPageSize(size);
+                setPageState({ key: listKey, page: 1 });
+              }}
+            />
           )}
         </Card>
       </main>
+      {propertiesOf && (
+        <VideoPropertiesModal
+          key={propertiesOf.id}
+          order={propertiesOf}
+          onClose={() => setPropertiesOf(null)}
+        />
+      )}
       {saved && (
         <SavedVideoModal
           key={`${saved.order.id}-${saved.mode}`}

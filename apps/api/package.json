@@ -9,7 +9,8 @@
     "dev": "tsx watch src/index.ts",
     "user:create": "tsx src/scripts/createUser.ts",
     "shopify:check": "tsx src/scripts/shopifySetup.ts",
-    "shopify:webhooks": "tsx src/scripts/shopifySetup.ts --webhooks"
+    "shopify:webhooks": "tsx src/scripts/shopifySetup.ts --webhooks",
+    "shopify:definitions": "tsx src/scripts/shopifySetup.ts --definitions"
   },
   "dependencies": {
     "@shipproof/shared": "file:../../packages/shared",

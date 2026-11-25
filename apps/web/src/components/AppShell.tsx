@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { formatDuration } from "../lib/usePacking";
 import { useAppData } from "./AppData";
+import { UploadsNavLink } from "./UploadsMenu";
 import { confirmSignOut, showToast } from "../lib/alerts";
 import { logout } from "../lib/auth";
 import type { ShopifyConnection } from "../lib/useOrders";
@@ -23,7 +24,6 @@ import type { ShopifyConnection } from "../lib/useOrders";
 const NAV_ITEMS: { label: string; href?: string; icon: LucideIcon }[] = [
   { label: "Dashboard", href: "/", icon: LayoutGrid },
   { label: "Orders", href: "/orders", icon: Package },
-  { label: "Recordings", icon: Video },
 ];
 
 const navButton =
@@ -99,6 +99,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </button>
               );
             })}
+            <UploadsNavLink
+              buttonClass={navButton}
+              active={pathname.startsWith("/uploads")}
+              locked={navLocked}
+              onLocked={lockedNotice}
+            />
           </div>
           <button
             type="button"

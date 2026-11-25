@@ -1,5 +1,6 @@
 import Swal from "sweetalert2";
 import type { StartIssue } from "./startIssues";
+import { pushToast } from "./toasts";
 
 const BLUE = "#3654D6";
 
@@ -45,31 +46,21 @@ export async function showStartProblem(
   return result.isConfirmed;
 }
 
-/** A centered alert with an OK button. Success alerts close themselves after a few seconds. */
+/**
+ * Tells the packer something. Good news ("ok") appears as a small notice in the corner and fades away, so it never
+ * gets in the way. Problems ("error") stay as a centered alert box with an OK button, because they need attention.
+ */
 export function showToast(tone: "ok" | "error", text: string, title?: string) {
+  if (tone === "ok") {
+    pushToast("ok", text);
+    return Promise.resolve();
+  }
   return Swal.fire({
-    icon: tone === "ok" ? "success" : "error",
-    title: title ?? (tone === "ok" ? "Done" : "Something went wrong"),
+    icon: "error",
+    title: title ?? "Something went wrong",
     text,
     confirmButtonText: "OK",
     confirmButtonColor: BLUE,
-    timer: tone === "ok" ? 6000 : undefined,
-    timerProgressBar: tone === "ok",
-  });
-}
-
-/** A "saving" dialog with a moving progress bar. It stays until another alert replaces it or it is closed. */
-export function showSavingProgress(orderNumber: string) {
-  return Swal.fire({
-    title: "Saving video…",
-    html: `<p style="margin:0 0 16px">Saving the recording for ${escapeHtml(orderNumber)}. Please wait.</p>
-      <div style="height:8px;border-radius:999px;background:#EAEEFC;overflow:hidden">
-        <div style="height:100%;width:40%;border-radius:999px;background:${BLUE};animation:sp-slide 1.1s ease-in-out infinite"></div>
-      </div>
-      <style>@keyframes sp-slide{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}</style>`,
-    showConfirmButton: false,
-    allowOutsideClick: false,
-    allowEscapeKey: false,
   });
 }
 
@@ -86,6 +77,33 @@ export function showStartingCamera() {
 }
 
 export const closeAlert = () => Swal.close();
+
+/** True while any alert box is on the screen. */
+export const isAlertOpen = () => Swal.isVisible();
+
+let cameraAlertOpen = false;
+
+/**
+ * The "camera is missing or not working" alert box, shown by itself when the problem appears. It is tracked
+ * so that it can be closed when the camera comes back, without ever closing some other alert.
+ * Resolves to true when the problem was fixed from the box ("Check again"), false when it was just closed.
+ */
+export async function showCameraProblem(
+  issue: StartIssue,
+  onCheckAgain: () => Promise<boolean>,
+): Promise<boolean> {
+  cameraAlertOpen = true;
+  try {
+    return await showStartProblem(issue, onCheckAgain);
+  } finally {
+    cameraAlertOpen = false;
+  }
+}
+
+/** Closes the camera alert if it is the one on the screen. */
+export function closeCameraProblem() {
+  if (cameraAlertOpen && Swal.isVisible()) Swal.close();
+}
 
 /** Asks before a saved video is replaced by a new recording. Resolves to true when the packer agrees. */
 export async function confirmRetake(orderNumber: string): Promise<boolean> {

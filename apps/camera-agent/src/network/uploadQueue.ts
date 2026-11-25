@@ -1,8 +1,10 @@
 import fs from "fs";
 import path from "path";
-import { Readable } from "stream";
+import { Readable, Transform } from "stream";
+import type { UploadItem } from "@shipproof/shared";
 import { agentConfig } from "../config/agent.config.js";
 import { agentLogger } from "../utils/localLogger.js";
+import { compressForUpload, probeVideoInfo } from "../core/compress.js";
 import { finalizeSession } from "../core/finalize.js";
 import { approveSession, reviewTimeoutMs } from "../core/review.js";
 import {
@@ -33,6 +35,44 @@ export class UploadQueue {
   private timer: NodeJS.Timeout | null = null;
   /** Most recent upload error, for the status endpoint. */
   lastError: string | null = null;
+  /** What the queue is doing right now: one video at a time. */
+  private active: UploadItem | null = null;
+  /** Videos confirmed by the cloud in the last few minutes, so the dashboard can show them as done. */
+  private recentlyDone: UploadItem[] = [];
+  /** Called when the list changes, so the dashboard hears about progress at once instead of every 10 seconds. */
+  onChange: (() => void) | null = null;
+  private lastNotify = 0;
+
+  private notify(force = false) {
+    const now = Date.now();
+    if (!force && now - this.lastNotify < 800) return;
+    this.lastNotify = now;
+    this.onChange?.();
+  }
+
+  /**
+   * Every video the dashboard should list: the one being worked on, those waiting (or waiting to retry), and
+   * those finished in the last three minutes. Read from disk each time, so it is right after a restart too.
+   */
+  snapshot(): UploadItem[] {
+    const items: UploadItem[] = [];
+    if (this.active) items.push({ ...this.active });
+    for (const s of this.pending()) {
+      if (s.sessionId === this.active?.sessionId) continue;
+      const retryAt = s.nextAttemptAt && Date.parse(s.nextAttemptAt) > Date.now() ? s.nextAttemptAt : undefined;
+      items.push({
+        sessionId: s.sessionId,
+        orderNumber: s.orderNumber,
+        state: retryAt ? "retrying" : "waiting",
+        totalBytes: s.fileSizeBytes,
+        durationSeconds: s.durationSeconds,
+        ...(retryAt ? { retryAt, error: s.lastError } : {}),
+      });
+    }
+    const cutoff = Date.now() - 3 * 60_000;
+    this.recentlyDone = this.recentlyDone.filter((d) => Date.parse(d.finishedAt ?? "") > cutoff);
+    return [...items, ...this.recentlyDone];
+  }
 
   start() {
     this.timer = setInterval(() => this.kick(), CHECK_INTERVAL_MS);
@@ -100,10 +140,17 @@ export class UploadQueue {
   }
 
   private async uploadOne(dir: string, session: SessionRecord) {
+    // Smaller before upload. Never throws: on any problem the original video is uploaded.
+    const willCompress = agentConfig.compressUpload && !session.mock && !session.compressed && !session.compressSkipped;
+    this.active = { sessionId: session.sessionId, orderNumber: session.orderNumber, state: willCompress ? "compressing" : "uploading", totalBytes: session.fileSizeBytes, durationSeconds: session.durationSeconds };
+    this.notify(true);
+    session = await compressForUpload(dir, session);
     const file = path.join(dir, session.finalFile || "final.mp4");
     try {
       if (!fs.existsSync(file)) throw new Error("Recording file is missing");
       const size = fs.statSync(file).size;
+      this.active = { sessionId: session.sessionId, orderNumber: session.orderNumber, state: "uploading", totalBytes: size, bytesSent: 0, durationSeconds: session.durationSeconds };
+      this.notify(true);
       agentLogger.info(
         `Uploading Order ${session.orderNumber} (${size} bytes, attempt ${session.attempts + 1})${session.interrupted ? " [interrupted recording]" : ""}...`,
       );
@@ -118,6 +165,8 @@ export class UploadQueue {
             orderId: session.orderId,
             sessionId: session.sessionId,
             stationId: agentConfig.stationId,
+            orderNumber: session.orderNumber,
+            recordedAt: session.startedAt,
             fileName: `${session.sessionId}.mp4`,
           }),
           signal: AbortSignal.timeout(30_000),
@@ -137,8 +186,19 @@ export class UploadQueue {
             "Content-Type": "video/mp4",
             "Content-Length": String(size),
           },
+          // The file is counted as it is read, so the dashboard can show how much has been sent.
           body: Readable.toWeb(
-            fs.createReadStream(file),
+            fs.createReadStream(file).pipe(
+              new Transform({
+                transform: (chunk, _encoding, done) => {
+                  if (this.active) {
+                    this.active.bytesSent = (this.active.bytesSent ?? 0) + chunk.length;
+                    this.notify();
+                  }
+                  done(null, chunk);
+                },
+              }),
+            ),
           ) as unknown as BodyInit,
           // Required by Node when the request body is a stream.
           duplex: "half",
@@ -149,6 +209,8 @@ export class UploadQueue {
       }
 
       // 3. Tell the cloud it is done.
+      if (this.active) this.active = { ...this.active, state: "confirming", bytesSent: size };
+      this.notify(true);
       const doneRes = await fetch(
         `${agentConfig.cloudApiUrl}/api/videos/complete`,
         {
@@ -158,6 +220,8 @@ export class UploadQueue {
             orderId: session.orderId,
             sessionId: session.sessionId,
             fileSizeBytes: size,
+            // The size and speed of the file actually being stored (after compression).
+            ...(probeVideoInfo(file) ?? {}),
             durationSeconds: session.durationSeconds ?? 0,
             interrupted: !!session.interrupted,
           }),
@@ -181,6 +245,17 @@ export class UploadQueue {
       }
       fs.rmSync(dir, { recursive: true, force: true });
       this.lastError = null;
+      this.recentlyDone.unshift({
+        sessionId: session.sessionId,
+        orderNumber: session.orderNumber,
+        state: "done",
+        totalBytes: size,
+        durationSeconds: session.durationSeconds,
+        finishedAt: new Date().toISOString(),
+      });
+      this.recentlyDone = this.recentlyDone.slice(0, 5);
+      this.active = null;
+      this.notify(true);
       agentLogger.info(
         `Order ${session.orderNumber} uploaded and confirmed. Local copy removed.`,
       );
@@ -189,6 +264,8 @@ export class UploadQueue {
       const delay = Math.min(5_000 * 2 ** (attempts - 1), MAX_BACKOFF_MS);
       const reason = err?.cause?.code || err?.message || String(err);
       this.lastError = reason;
+      this.active = null;
+      this.notify(true);
       updateSession(dir, {
         attempts,
         lastError: reason,

@@ -1,9 +1,13 @@
 import { authService } from "../modules/auth/auth.service.js";
+import { verifyStationKey } from "../modules/stations/stationAuth.js";
 import { Server as HttpServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { logger } from "../utils/logger.js";
 import { WsEvents, WsMessage, StationHeartbeat, WS_CLOSE_DEVICE_IN_USE } from "@shipproof/shared";
 import { stationService } from "../modules/stations/station.service.js";
+
+/** Close code sent to a web client or camera device whose sign-in or station key is missing or not accepted. */
+const WS_CLOSE_UNAUTHORIZED = 4401;
 
 /** How often the hub pings the connected device; a device that misses a ping is dropped. */
 const PING_INTERVAL_MS = 30_000;
@@ -27,9 +31,6 @@ export interface ActiveDeviceInfo {
  * Only one camera device may be connected at a time: a second agent is rejected with
  * close code WS_CLOSE_DEVICE_IN_USE until the first disconnects or stops answering pings.
  */
-/** Close code sent to a web client whose sign-in is missing or no longer valid. */
-const WS_CLOSE_UNAUTHORIZED = 4401;
-
 export class StationHub {
   private wss: WebSocketServer | null = null;
   private activeDevice: ConnectedDevice | null = null;
@@ -44,6 +45,12 @@ export class StationHub {
       const clientType = url.searchParams.get("type") || "client"; // "agent" or "client"
 
       if (clientType === "agent" && stationId) {
+        // A camera device must present its station key, the same one it uses for uploads.
+        const key = String(req.headers["x-station-key"] || "");
+        if (!(await verifyStationKey(stationId, key))) {
+          ws.close(WS_CLOSE_UNAUTHORIZED, "Station key not accepted");
+          return;
+        }
         this.handleAgentConnection(ws, stationId);
       } else {
         // Packer / Admin web client connection: only signed-in people may connect.

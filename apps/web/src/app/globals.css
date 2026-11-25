@@ -53,3 +53,54 @@ body {
     transform: translateX(0);
   }
 }
+
+/* The moving stretch inside a progress bar that has no known length. Still for people who ask to reduce motion. */
+@keyframes upload-sweep {
+  from {
+    left: -40%;
+  }
+  to {
+    left: 100%;
+  }
+}
+.upload-sweep {
+  animation: upload-sweep 1.4s cubic-bezier(0.45, 0.05, 0.55, 0.95) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .upload-sweep {
+    animation: none;
+    left: 30%;
+  }
+}
+
+/* A notice sliding up into its corner. Still for people who have asked to reduce motion. */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.toast-in {
+  animation: toast-in 0.22s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast-in {
+    animation: none;
+  }
+}
+
+/*
+ * The look behind every modal (alert boxes and dialog windows): the page stays visible, but darker and softly
+ * blurred, so attention goes to the box.
+ */
+.modal-backdrop,
+.swal2-container.swal2-backdrop-show,
+.swal2-container.swal2-noanimation {
+  background: rgba(11, 14, 26, 0.58) !important;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}

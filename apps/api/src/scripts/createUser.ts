@@ -32,7 +32,7 @@ async function main() {
     process.exit(1);
   }
 
-  // The new-account trigger creates the profile; this sets the name and role explicitly.
+  // Only accounts with a profile can sign in to ShipProof, so this row is what lets the person in.
   const { error: profileError } = await supabase
     .from("profiles")
     .upsert({ id: data.user.id, full_name: fullName || email.split("@")[0], role });

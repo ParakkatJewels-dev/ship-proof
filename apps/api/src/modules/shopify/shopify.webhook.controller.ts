@@ -29,7 +29,7 @@ export class ShopifyWebhookController {
     }
   }
 
-  /** fulfillments/update: starts the 7-day retention countdown once a shipment is delivered. */
+  /** fulfillments/update: starts the retention countdown (30 days) once a shipment is delivered. */
   async handleFulfillmentUpdate(req: Request, res: Response) {
     const payload = req.body;
     sendSuccess(res, { acknowledged: true });

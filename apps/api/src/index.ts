@@ -4,6 +4,14 @@ import { config } from "./config/env.config.js";
 import { logger } from "./utils/logger.js";
 import { stationHub } from "./sockets/stationHub.js";
 import { startVideoRetentionJob } from "./jobs/videoRetention.job.js";
+import { productionProblems } from "./config/productionChecks.js";
+
+// Refuse to start in production with an unsafe or incomplete setup.
+const problems = productionProblems();
+if (problems.length) {
+  logger.error("The API cannot start in production:\n - " + problems.join("\n - "));
+  process.exit(1);
+}
 
 const app = createApp();
 const server = http.createServer(app);

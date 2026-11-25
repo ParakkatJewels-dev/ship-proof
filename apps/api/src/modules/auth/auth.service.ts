@@ -51,17 +51,30 @@ if (devLoginEnabled) {
   );
 }
 
-/** A client of its own for sign-in calls, so a user session never replaces the server service key. */
+/**
+ * A client of its own for sign-in calls, so a user session never replaces the server's secret key.
+ * Signing people in uses the public key, as Supabase recommends; the secret key stays for server work.
+ */
 const authClient = () =>
-  createClient(config.supabase.url, config.supabase.serviceKey, {
+  createClient(config.supabase.url, config.supabase.publishableKey || config.supabase.serviceKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
 const asRole = (value: unknown): UserRole =>
   value === UserRole.ADMIN ? UserRole.ADMIN : UserRole.PACKER;
 
+/**
+ * Who a Supabase account is in ShipProof. Only accounts an admin created in ShipProof (they have a row in
+ * profiles) may use the dashboard. A Supabase account that exists for any other reason, for example one
+ * created through public sign-up, is refused here, so ShipProof stays closed even if sign-up is on.
+ */
 async function loadProfile(id: string, email: string, metaName?: string): Promise<AuthUser> {
-  const { data } = await supabase.from("profiles").select("full_name, role").eq("id", id).maybeSingle();
+  const { data, error } = await supabase.from("profiles").select("full_name, role").eq("id", id).maybeSingle();
+  if (error) {
+    logger.error("Could not read the profile", error);
+    throw new AuthError("Sign-in is unavailable right now. Try again in a moment.", 503);
+  }
+  if (!data) throw new AuthError("This account is not set up for ShipProof. Ask an administrator to add you.", 403);
   return {
     id,
     email,

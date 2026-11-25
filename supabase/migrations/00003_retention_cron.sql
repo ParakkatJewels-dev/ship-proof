@@ -1,6 +1,6 @@
 -- ==============================================================================
--- ShipProof: Automated 7-Day Video Retention Cleanup
--- Migration 00003: Retention Cron & Function
+-- ShipProof: Automated Video Retention Cleanup
+-- Migration 00003: Retention functions (no nightly schedule: the API's hourly job deletes the files)
 -- ==============================================================================
 
 -- Function: Triggered when order is marked DELIVERED to calculate expiry date
@@ -13,9 +13,9 @@ BEGIN
             NEW.delivered_at = NOW();
         END IF;
 
-        -- Set video expiry to 7 days after delivery
+        -- Set video expiry after delivery (replaced by migration 00008, which reads the days from retention_policy)
         UPDATE videos
-        SET expires_at = NEW.delivered_at + INTERVAL '7 days',
+        SET expires_at = NEW.delivered_at + INTERVAL '30 days',
             updated_at = NOW()
         WHERE order_id = NEW.id
           AND status IN ('PROCESSED', 'ACTIVE');
@@ -55,15 +55,3 @@ BEGIN
     RETURN QUERY SELECT affected_rows;
 END;
 $$ LANGUAGE plpgsql;
-
--- Schedule daily cron job (runs every midnight UTC) if pg_cron is enabled
-DO $$
-BEGIN
-    IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'pg_cron') THEN
-        PERFORM cron.schedule(
-            'daily-video-retention-purge',
-            '0 0 * * *',
-            'SELECT purge_expired_videos();'
-        );
-    END IF;
-END $$;

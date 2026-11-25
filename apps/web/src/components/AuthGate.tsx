@@ -20,12 +20,16 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   );
   const signedIn = !!raw;
   const onLogin = pathname === "/login";
+  // The customer watch page is public: it never needs a dashboard sign-in.
+  const isPublic = pathname.startsWith("/watch/");
 
   useEffect(() => {
-    if (raw === undefined) return;
+    if (raw === undefined || isPublic) return;
     if (!signedIn && !onLogin) router.replace("/login");
     else if (signedIn && onLogin) router.replace("/");
-  }, [raw, signedIn, onLogin, router]);
+  }, [raw, signedIn, onLogin, isPublic, router]);
+
+  if (isPublic) return <>{children}</>;
 
   const redirecting = raw === undefined || signedIn === onLogin;
   if (redirecting) {

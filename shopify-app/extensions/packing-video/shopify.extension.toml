@@ -1,0 +1,16 @@
+api_version = "2025-10"
+
+[[extensions]]
+name = "ShipProof packing video"
+handle = "packing-video"
+type = "ui_extension"
+
+  # Shows on the order status page of the customer account. The merchant can move the block in the
+  # checkout and accounts editor.
+  [[extensions.targeting]]
+  module = "./src/OrderStatusBlock.jsx"
+  target = "customer-account.order-status.block.render"
+
+  [extensions.capabilities]
+  # Needed to read the order's metafields with the Customer Account API.
+  api_access = true

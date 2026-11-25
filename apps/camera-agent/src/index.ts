@@ -42,6 +42,9 @@ async function main() {
   // 5. Connect to Cloud WebSocket Gateway
   wsClient.connect();
 
+  // Upload progress reaches the dashboard as it happens.
+  uploadQueue.onChange = () => wsClient.heartbeatNow();
+
   // 6. Read what size and speed the camera really delivers, for the dashboard.
   probeCamera(() => recorder.isRecording());
 }

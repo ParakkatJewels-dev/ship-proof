@@ -26,6 +26,8 @@ interface ApiOrder {
   customerEmail: string;
   fulfillmentStatus: string;
   deliveryStatus: string;
+  /** When the order was packed and its video saved. Kept by the server, so it survives a reload. */
+  packedAt?: string | null;
   createdAt: string;
   items: {
     id: string;
@@ -81,7 +83,8 @@ export function toOrderRecord(o: ApiOrder): OrderRecord {
       minute: "2-digit",
     }),
     placedDate: dateLabel(created),
-    status: shipped ? "Dispatched" : "Pending",
+    // Packed is decided by the server (a saved video), so it is still true after a reload or a shipment.
+    status: o.packedAt ? "Packed" : shipped ? "Dispatched" : "Pending",
     thumbnailUrl: o.items.find((it) => it.imageUrl)?.imageUrl || "",
     items: o.items.map((it) => ({
       id: it.id,
@@ -94,6 +97,26 @@ export function toOrderRecord(o: ApiOrder): OrderRecord {
 
 export const fetchShopifyStatus = () =>
   getJson<ShopifyStatus>("/api/shopify/status");
+
+/** One video's place in the camera computer's upload queue. */
+export interface UploadItem {
+  sessionId: string;
+  orderNumber: string;
+  state:
+    | "waiting"
+    | "compressing"
+    | "uploading"
+    | "confirming"
+    | "retrying"
+    | "done";
+  totalBytes?: number;
+  /** Length of the video in seconds. */
+  durationSeconds?: number;
+  bytesSent?: number;
+  error?: string;
+  retryAt?: string;
+  finishedAt?: string;
+}
 
 /** The single camera device connected to ShipProof. Only one device can be connected at a time. */
 export type ActiveDevice =
@@ -109,6 +132,8 @@ export type ActiveDevice =
       cameraStatus: "CONNECTED" | "RECORDING" | "DISCONNECTED" | "ERROR";
       /** Recordings finished on the station and still waiting to upload. */
       pendingUploads?: number;
+      /** Every video waiting to upload, being uploaded, or uploaded in the last few minutes. */
+      uploads?: UploadItem[];
       /** The recording the device is running right now. */
       /** A finished recording waiting to be reviewed, trimmed and saved. */
       review?: {
@@ -148,4 +173,70 @@ export async function searchOrder(query: string): Promise<OrderRecord | null> {
     if (err instanceof Error && /not found/i.test(err.message)) return null;
     throw err;
   }
+}
+
+/** What the dashboard may know about an order's stored video. Never includes a storage address. */
+export interface VideoProperties {
+  status: string;
+  durationSeconds: number;
+  fileSizeBytes: number;
+  /** When the packer started recording (or, for older videos, when the upload began). */
+  recordedAt: string;
+  /** Picture size and frame rate of the stored video. Null for videos saved before these were kept. */
+  width: number | null;
+  height: number | null;
+  fps: number | null;
+  expiresAt: string | null;
+  interrupted: boolean;
+}
+
+/** The stored video of an order, or null when there is none. */
+export async function fetchVideoProperties(
+  orderId: string,
+): Promise<VideoProperties | null> {
+  try {
+    return await getJson<VideoProperties>(
+      `/api/videos/order/${encodeURIComponent(orderId)}`,
+    );
+  } catch {
+    return null;
+  }
+}
+
+/** A temporary address to play an order's stored video, made fresh by the server. */
+export interface CloudPlayback {
+  url: string;
+  durationSeconds: number;
+}
+
+/** The order's stored video, or null when it has none (or none that can be played). */
+export async function fetchCloudPlayback(
+  orderId: string,
+): Promise<CloudPlayback | null> {
+  try {
+    return await getJson<CloudPlayback>(
+      `/api/videos/order/${encodeURIComponent(orderId)}/playback`,
+    );
+  } catch {
+    return null;
+  }
+}
+
+/** Cuts the stored video to [start, end] seconds on the server. The customer's link keeps working. */
+export async function trimCloudVideo(
+  orderId: string,
+  range: { start: number; end: number },
+) {
+  const res = await authFetch(
+    `${API_URL}/api/videos/order/${encodeURIComponent(orderId)}/trim`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(range),
+      signal: AbortSignal.timeout(20 * 60_000),
+    },
+  );
+  const body = await res.json().catch(() => null);
+  if (!res.ok || !body?.success)
+    throw new Error(body?.error || `The server answered ${res.status}`);
 }

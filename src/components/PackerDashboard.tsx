@@ -314,7 +314,7 @@ export function PackerDashboard({ selectedStation }: { selectedStation: string }
                   <div>
                     <span className="font-bold block">Packing Video Linked & Synced!</span>
                     <span className="text-[11px] text-emerald-400/80">
-                      Auto-synced to Shopify Order Metafield. Retained for 7 days post-delivery.
+                      Auto-synced to Shopify Order Metafield. Retained for 30 days after delivery.
                     </span>
                   </div>
                 </div>

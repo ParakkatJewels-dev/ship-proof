@@ -18,6 +18,7 @@ const ORDER_FIELDS = `
   updatedAt
   currencyCode
   displayFulfillmentStatus
+  tags
   totalPriceSet { shopMoney { amount } }
   customer { displayName }
   lineItems(first: 50) {
@@ -33,6 +34,8 @@ const ORDER_FIELDS = `
     }
   }
   fulfillments(first: 10) { displayStatus deliveredAt }
+  packingStatus: metafield(namespace: "shipproof", key: "packing_status") { value }
+  packedAtMeta: metafield(namespace: "shipproof", key: "packed_at") { value }
 `;
 
 const ORDERS_QUERY = `
@@ -58,6 +61,34 @@ const METAFIELDS_SET = `
     }
   }
 `;
+
+const METAFIELDS_DELETE = `
+  mutation ShipProofClearVideoLink($metafields: [MetafieldIdentifierInput!]!) {
+    metafieldsDelete(metafields: $metafields) {
+      deletedMetafields { key namespace }
+      userErrors { field message }
+    }
+  }
+`;
+
+const METAFIELD_DEFINITION_CREATE = `
+  mutation ShipProofMetafieldDefinition($definition: MetafieldDefinitionInput!) {
+    metafieldDefinitionCreate(definition: $definition) {
+      createdDefinition { id }
+      userErrors { field message code }
+    }
+  }
+`;
+
+/**
+ * The order metafields ShipProof writes. The customer account page can only read a metafield whose
+ * definition allows customer account access, so these definitions are created once with that access.
+ */
+export const PACKING_METAFIELDS = [
+  { key: "packing_status", name: "ShipProof packing status", type: "single_line_text_field" },
+  { key: "packed_at", name: "ShipProof packed at", type: "date_time" },
+  { key: "packing_video_url", name: "ShipProof packing video link", type: "url" },
+] as const;
 
 /** Scopes ShipProof needs on the Shopify app. */
 export const REQUIRED_SCOPES = ["read_orders", "write_orders", "read_customers", "read_fulfillments"];
@@ -101,6 +132,9 @@ interface ShopifyOrderNode {
     }[];
   };
   fulfillments: { displayStatus?: string | null; deliveredAt?: string | null }[];
+  packingStatus?: { value: string } | null;
+  packedAtMeta?: { value: string } | null;
+  tags?: string[];
 }
 
 export interface ShopInfo {
@@ -124,8 +158,16 @@ function deliveryFromFulfillments(fulfillments: ShopifyOrderNode["fulfillments"]
   return { status: DeliveryStatus.PENDING, deliveredAt: null };
 }
 
+/** True when the order carries a return-to-origin tag (see RTO_TAGS). Whole tags only: "RTO-pending" does not count. */
+export function isReturnedToOrigin(tags: string[] | undefined): boolean {
+  return (tags || []).some((t) => config.retention.rtoTags.includes(t.trim().toLowerCase().replace(/\s+/g, " ")));
+}
+
 export function mapShopifyOrder(node: ShopifyOrderNode): Order {
-  const delivery = deliveryFromFulfillments(node.fulfillments || []);
+  const returned = isReturnedToOrigin(node.tags);
+  const delivery = returned
+    ? { status: DeliveryStatus.RETURNED, deliveredAt: null }
+    : deliveryFromFulfillments(node.fulfillments || []);
   const items: OrderItem[] = node.lineItems.nodes.map((li) => ({
     id: li.id,
     sku: li.sku || "NO-SKU",
@@ -149,6 +191,11 @@ export function mapShopifyOrder(node: ShopifyOrderNode): Order {
     fulfillmentStatus: node.displayFulfillmentStatus.toLowerCase(),
     deliveryStatus: delivery.status,
     deliveredAt: delivery.deliveredAt,
+    // Written by ShipProof when the video is saved. It lives on the Shopify order itself, so "Packed"
+    // survives a restart even when no database is connected.
+    // Shopify does not say when the tag was added; the last update of the order is the closest it gives.
+    returnedAt: returned ? node.updatedAt : null,
+    packedAt: node.packingStatus?.value === "packed" ? node.packedAtMeta?.value || node.updatedAt : null,
     createdAt: node.createdAt,
     updatedAt: node.updatedAt,
     items,
@@ -317,37 +364,98 @@ export class ShopifyClient {
     return { ...result.data.shop, grantedScopes: granted, missingScopes: missing };
   }
 
-  /** Stores the packing video link on the order as metafield shipproof.packing_video_url. */
-  async attachVideoProofMetafield(orderId: string, videoUrl: string): Promise<boolean> {
+  /**
+   * Marks the order as packed and stores the link to its packing video, as metafields on the order:
+   * shipproof.packing_status, shipproof.packed_at and shipproof.packing_video_url.
+   * Returns false (after logging why) when Shopify refused or could not be reached, so the caller retries.
+   */
+  async setPackingProof(orderId: string, proof: { watchUrl: string; packedAt: string }): Promise<boolean> {
     if (this.isMock) {
-      logger.info(`[Mock Shopify] Attached video proof link to order ${orderId}: ${videoUrl}`);
+      logger.info(`[Mock Shopify] Order ${orderId} marked packed. Video link: ${proof.watchUrl}`);
       return true;
     }
 
+    const owner = toOrderGid(orderId);
     try {
       const result = await this.graphql<{
         metafieldsSet: { userErrors: { field: string[]; message: string }[] };
       }>(METAFIELDS_SET, {
         metafields: [
-          {
-            ownerId: toOrderGid(orderId),
-            namespace: "shipproof",
-            key: "packing_video_url",
-            type: "url",
-            value: videoUrl,
-          },
+          { ownerId: owner, namespace: "shipproof", key: "packing_status", type: "single_line_text_field", value: "packed" },
+          { ownerId: owner, namespace: "shipproof", key: "packed_at", type: "date_time", value: proof.packedAt },
+          { ownerId: owner, namespace: "shipproof", key: "packing_video_url", type: "url", value: proof.watchUrl },
         ],
       });
       const userErrors = result.data?.metafieldsSet.userErrors || [];
       if (result.errors?.length || userErrors.length) {
-        logger.error("Failed to set packing video metafield:", { errors: result.errors, userErrors });
+        logger.error("Failed to mark the Shopify order as packed:", { orderId, errors: result.errors, userErrors });
         return false;
       }
       return true;
     } catch (err: any) {
-      logger.error("Failed to attach video metafield:", err.message);
+      logger.error(`Failed to mark Shopify order ${orderId} as packed:`, err.message);
       return false;
     }
+  }
+
+  /** Removes the video link from the order, so customers no longer see a Watch button. The packed status stays. */
+  async clearPackingVideo(orderId: string): Promise<boolean> {
+    if (this.isMock) {
+      logger.info(`[Mock Shopify] Removed the video link from order ${orderId}`);
+      return true;
+    }
+    try {
+      const result = await this.graphql<{
+        metafieldsDelete: { userErrors: { field: string[]; message: string }[] };
+      }>(METAFIELDS_DELETE, {
+        metafields: [{ ownerId: toOrderGid(orderId), namespace: "shipproof", key: "packing_video_url" }],
+      });
+      const userErrors = result.data?.metafieldsDelete.userErrors || [];
+      if (result.errors?.length || userErrors.length) {
+        logger.error("Failed to remove the video link from the Shopify order:", { orderId, errors: result.errors, userErrors });
+        return false;
+      }
+      return true;
+    } catch (err: any) {
+      logger.error(`Failed to remove the video link from Shopify order ${orderId}:`, err.message);
+      return false;
+    }
+  }
+
+  /**
+   * Creates the metafield definitions once, with customer account read access, so the order tracking
+   * page can show the Watch button. Safe to run again: definitions that already exist are left alone.
+   */
+  async ensureMetafieldDefinitions(): Promise<{ key: string; state: "created" | "exists" | "failed"; message?: string }[]> {
+    const results: { key: string; state: "created" | "exists" | "failed"; message?: string }[] = [];
+    for (const def of PACKING_METAFIELDS) {
+      const result = await this.graphql<{
+        metafieldDefinitionCreate: {
+          createdDefinition: { id: string } | null;
+          userErrors: { field: string[]; message: string; code?: string }[];
+        };
+      }>(METAFIELD_DEFINITION_CREATE, {
+        definition: {
+          name: def.name,
+          namespace: "shipproof",
+          key: def.key,
+          type: def.type,
+          ownerType: "ORDER",
+          access: { customerAccount: "READ" },
+        },
+      });
+      const payload = result.data?.metafieldDefinitionCreate;
+      const errors = payload?.userErrors ?? [];
+      if (payload?.createdDefinition) results.push({ key: def.key, state: "created" });
+      else if (errors.some((e) => e.code === "TAKEN")) results.push({ key: def.key, state: "exists" });
+      else
+        results.push({
+          key: def.key,
+          state: "failed",
+          message: errors.map((e) => e.message).join("; ") || (result.errors || []).map((e) => e.message).join("; "),
+        });
+    }
+    return results;
   }
 }
 
