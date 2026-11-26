@@ -34,14 +34,15 @@ export class StorageService {
   /**
    * Generates a temporary signed download URL for viewing or customer playback.
    */
-  async createSignedDownloadUrl(filePath: string, expiresInSeconds = 3600): Promise<string> {
+  async createSignedDownloadUrl(filePath: string, expiresInSeconds = 3600, downloadAs?: string): Promise<string> {
     if (isMockSupabase) {
       return `https://mock-storage.supabase.co/download/${this.bucket}/${filePath}?token=mock-token`;
     }
 
     const { data, error } = await supabase.storage
       .from(this.bucket)
-      .createSignedUrl(filePath, expiresInSeconds);
+      // With downloadAs, the browser saves the file under that name instead of playing it.
+      .createSignedUrl(filePath, expiresInSeconds, downloadAs ? { download: downloadAs } : undefined);
 
     if (error || !data) {
       logger.error("Failed to generate signed download URL", error);

@@ -257,13 +257,40 @@ export class VideoService {
   }
 
   /**
+   * A temporary address that downloads the order's current video as a file named after the order.
+   * Only for signed-in staff.
+   */
+  async getDownload(orderId: string): Promise<{ url: string; fileName: string } | null> {
+    const video = await repo.findLatestByOrder(await this.orderIdForVideos(orderId));
+    if (!video || video.status !== VideoStatus.ACTIVE) return null;
+    const number = ((await orderService.resolveIdentity(video.orderId))?.orderNumber || video.orderNumber || "order").replace(/^#/, "");
+    const fileName = `ShipProof-${number.replace(/[^A-Za-z0-9_-]/g, "")}.mp4`;
+    return { url: await storageService.createSignedDownloadUrl(video.storagePath, PLAYBACK_SECONDS, fileName), fileName };
+  }
+
+  /**
+   * Makes a new link that opens the order's current video in any browser, without signing in. It works
+   * like the customer's link (same watch page) and stops working when the video is deleted or expires.
+   * Each call makes a separate link; the customer's link on the Shopify order is not touched.
+   */
+  async createShareLink(orderId: string, createdBy: string | null): Promise<{ url: string; expiresAt: string | null } | null> {
+    const video = await repo.findLatestByOrder(await this.orderIdForVideos(orderId));
+    if (!video || video.status !== VideoStatus.ACTIVE) return null;
+    const { token, hash } = createWatchToken();
+    await repo.addShareLink(video.id, hash, createdBy);
+    return { url: watchUrl(token), expiresAt: video.expiresAt ?? null };
+  }
+
+  /**
    * Opens a customer watch link. The token is the only credential: it identifies exactly one video of
    * exactly one order, so a customer cannot reach another order's video. A fresh temporary playback
    * address is made on every visit, so no storage address is ever kept or shown for long.
    */
   async resolveWatch(token: string): Promise<WatchResult> {
     if (!isWellFormedToken(token)) return { state: "unavailable" };
-    const video = await repo.findByTokenHash(hashWatchToken(token));
+    const hash = hashWatchToken(token);
+    // The customer's link from Shopify, or an extra link made with Share in the dashboard.
+    const video = (await repo.findByTokenHash(hash)) ?? (await repo.findByShareHash(hash));
     if (!video) return { state: "unavailable" };
 
     const orderNumber = (await orderService.resolveIdentity(video.orderId))?.orderNumber || video.orderNumber || undefined;

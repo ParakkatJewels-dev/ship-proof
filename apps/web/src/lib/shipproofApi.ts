@@ -230,6 +230,34 @@ export async function fetchCloudPlayback(
   }
 }
 
+/** A temporary address that saves the order's stored video as a file. Throws with a readable reason. */
+export async function fetchVideoDownload(
+  orderId: string,
+): Promise<{ url: string; fileName: string }> {
+  return getJson<{ url: string; fileName: string }>(
+    `/api/videos/order/${encodeURIComponent(orderId)}/download`,
+  );
+}
+
+/** A new link that opens the order's video in any browser without signing in. */
+export interface ShareLink {
+  url: string;
+  /** When the video (and so the link) will be deleted; null until the order is delivered. */
+  expiresAt: string | null;
+}
+
+/** Makes a new share link for the order's video. Throws with a readable reason. */
+export async function createShareLink(orderId: string): Promise<ShareLink> {
+  const res = await authFetch(
+    `${API_URL}/api/videos/order/${encodeURIComponent(orderId)}/share`,
+    { method: "POST", signal: AbortSignal.timeout(15_000) },
+  );
+  const body = await res.json().catch(() => null);
+  if (!res.ok || !body?.success)
+    throw new Error(body?.error || `The server answered ${res.status}`);
+  return body.data as ShareLink;
+}
+
 /** Cuts the stored video to [start, end] seconds on the server. The customer's link keeps working. */
 export async function trimCloudVideo(
   orderId: string,

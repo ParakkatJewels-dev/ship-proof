@@ -4,6 +4,7 @@ import { trimOrderVideo } from "./video.trim.service.js";
 import { sendSuccess, sendError } from "../../utils/response.js";
 import { HttpError } from "../../utils/httpError.js";
 import { logger } from "../../utils/logger.js";
+import type { AuthenticatedRequest } from "../../middlewares/auth.middleware.js";
 
 /** Known problems keep their status; anything else is logged and answered with a plain message. */
 const fail = (res: Response, err: unknown) => {
@@ -75,6 +76,31 @@ export class VideoController {
       if (!playback) return sendError(res, "This order has no playable video.", 404);
       res.setHeader("Cache-Control", "no-store");
       return sendSuccess(res, playback);
+    } catch (err) {
+      return fail(res, err);
+    }
+  }
+
+  /** A temporary address that saves the order's video as a file. */
+  async getDownload(req: Request, res: Response) {
+    try {
+      const download = await videoService.getDownload(String(req.params.orderId || ""));
+      if (!download) return sendError(res, "This order has no video to download yet.", 404);
+      res.setHeader("Cache-Control", "no-store");
+      return sendSuccess(res, download);
+    } catch (err) {
+      return fail(res, err);
+    }
+  }
+
+  /** A new link that opens the order's video in any browser, for sharing. */
+  async createShareLink(req: Request, res: Response) {
+    try {
+      const user = (req as AuthenticatedRequest).user;
+      const link = await videoService.createShareLink(String(req.params.orderId || ""), user?.id ?? null);
+      if (!link) return sendError(res, "This order has no video to share yet.", 404);
+      res.setHeader("Cache-Control", "no-store");
+      return sendSuccess(res, link, "Share link created");
     } catch (err) {
       return fail(res, err);
     }

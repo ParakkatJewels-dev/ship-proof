@@ -3,7 +3,15 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Eye, Info, Play, RotateCcw, Scissors } from "lucide-react";
+import {
+  Download,
+  Eye,
+  Info,
+  Play,
+  RotateCcw,
+  Scissors,
+  Share2,
+} from "lucide-react";
 import type { OrderRecord } from "../lib/orders";
 import { matchesQuery } from "../lib/useOrders";
 import { useAppData } from "./AppData";
@@ -11,10 +19,33 @@ import { AppShell, PageHeader } from "./AppShell";
 import { Card, OrdersTable } from "./ui";
 import { SavedVideoModal } from "./SavedVideoModal";
 import { VideoPropertiesModal } from "./VideoPropertiesModal";
+import { ShareVideoModal } from "./ShareVideoModal";
+import { fetchVideoDownload } from "../lib/shipproofApi";
 import { RowMenu } from "./RowMenu";
 import { Pagination } from "./Pagination";
 import { clampPage, pageCount } from "../lib/pagination";
-import { confirmRetake } from "../lib/alerts";
+import { confirmRetake, showToast } from "../lib/alerts";
+
+/** Saves an order's stored video to this computer, named after the order. */
+async function downloadVideo(order: OrderRecord) {
+  try {
+    const { url, fileName } = await fetchVideoDownload(order.id);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    void showToast("ok", `Downloading ${fileName}`);
+  } catch (err) {
+    void showToast(
+      "error",
+      err instanceof Error ? err.message : "Could not download the video.",
+      "Download failed",
+    );
+  }
+}
 
 const TABS = ["All", "Pending", "Packed"] as const;
 type Filter = (typeof TABS)[number];
@@ -46,6 +77,7 @@ export function OrdersPage() {
   } = ordersData;
   const busy = packing.session.status !== "idle";
   const [propertiesOf, setPropertiesOf] = useState<OrderRecord | null>(null);
+  const [sharing, setSharing] = useState<OrderRecord | null>(null);
   const [saved, setSaved] = useState<{
     order: OrderRecord;
     mode: "view" | "trim";
@@ -99,6 +131,16 @@ export function OrdersPage() {
                 label: "View",
                 icon: Eye,
                 onSelect: () => setSaved({ order, mode: "view" }),
+              },
+              {
+                label: "Download",
+                icon: Download,
+                onSelect: () => void downloadVideo(order),
+              },
+              {
+                label: "Share",
+                icon: Share2,
+                onSelect: () => setSharing(order),
               },
               {
                 label: "Properties",
@@ -366,6 +408,13 @@ export function OrdersPage() {
           key={propertiesOf.id}
           order={propertiesOf}
           onClose={() => setPropertiesOf(null)}
+        />
+      )}
+      {sharing && (
+        <ShareVideoModal
+          key={sharing.id}
+          order={sharing}
+          onClose={() => setSharing(null)}
         />
       )}
       {saved && (

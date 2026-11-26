@@ -26,6 +26,10 @@ export interface VideoRepository {
   findLatestByOrder(orderId: string): Promise<StoredVideo | null>;
   listByOrder(orderId: string): Promise<StoredVideo[]>;
   findByTokenHash(hash: string): Promise<StoredVideo | null>;
+  /** Stores an extra watch link (the Share action) for a video; only the hash of its secret is kept. */
+  addShareLink(videoId: string, tokenHash: string, createdBy: string | null): Promise<void>;
+  /** The video an extra watch link points to. */
+  findByShareHash(hash: string): Promise<StoredVideo | null>;
   /** Finished videos whose watch link has not reached Shopify yet. */
   listUnsynced(limit: number): Promise<StoredVideo[]>;
   /** Deleted videos whose link could not be taken off the Shopify order yet. */
@@ -38,6 +42,8 @@ export interface VideoRepository {
 /* ------------------------------- in memory -------------------------------- */
 
 const memory = new Map<string, StoredVideo>();
+/** Extra watch links in demo mode: secret hash -> video id. */
+const memoryShares = new Map<string, string>();
 
 const newestFirst = (a: StoredVideo, b: StoredVideo) => b.createdAt.localeCompare(a.createdAt);
 
@@ -60,6 +66,13 @@ const memoryRepository: VideoRepository = {
   },
   async findByTokenHash(hash) {
     return [...memory.values()].find((v) => v.watchTokenHash === hash) ?? null;
+  },
+  async addShareLink(videoId, tokenHash) {
+    memoryShares.set(tokenHash, videoId);
+  },
+  async findByShareHash(hash) {
+    const id = memoryShares.get(hash);
+    return id ? memory.get(id) ?? null : null;
   },
   async listUnsynced(limit) {
     return [...memory.values()].filter((v) => v.status === VideoStatus.ACTIVE && !v.shopifySyncedAt).slice(0, limit);
@@ -192,6 +205,21 @@ const supabaseRepository: VideoRepository = {
   },
   async findByTokenHash(hash) {
     const data = must(await supabase.from("videos").select("*").eq("watch_token_hash", hash).maybeSingle(), "Video lookup failed");
+    return data ? fromRow(data) : null;
+  },
+  async addShareLink(videoId, tokenHash, createdBy) {
+    must(
+      await supabase.from("video_share_links").insert({ video_id: videoId, token_hash: tokenHash, created_by: createdBy }),
+      "Could not save the share link",
+    );
+  },
+  async findByShareHash(hash) {
+    const link = must(
+      await supabase.from("video_share_links").select("video_id").eq("token_hash", hash).maybeSingle(),
+      "Share link lookup failed",
+    );
+    if (!link) return null;
+    const data = must(await supabase.from("videos").select("*").eq("id", link.video_id).maybeSingle(), "Video lookup failed");
     return data ? fromRow(data) : null;
   },
   async listUnsynced(limit) {
