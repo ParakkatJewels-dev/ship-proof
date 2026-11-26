@@ -1,6 +1,8 @@
 import crypto from "crypto";
 import { Router, Request, Response, NextFunction } from "express";
 import { videoService } from "../videos/video.service.js";
+import { orderService } from "../orders/order.service.js";
+import { announceOrdersChanged } from "../../integrations/supabase/realtime.js";
 import { sendError, sendSuccess } from "../../utils/response.js";
 import { logger } from "../../utils/logger.js";
 
@@ -43,6 +45,19 @@ router.get("/shopify-retry", requireCronSecret, async (_req, res) => {
   } catch (err: any) {
     logger.error("Shopify retry failed:", err);
     return sendError(res, "Shopify retry failed.", 500);
+  }
+});
+
+/** Every 5 minutes: add orders whose Shopify webhook never arrived, and pick up missed cancellations. */
+router.get("/orders-sync", requireCronSecret, async (_req, res) => {
+  try {
+    const result = await orderService.syncRecentFromShopify();
+    logger.info(`Order sync: ${result.added} added, ${result.updated} updated.`);
+    if (result.added > 0) await announceOrdersChanged();
+    return sendSuccess(res, result);
+  } catch (err: any) {
+    logger.error("Order sync failed:", err);
+    return sendError(res, "Order sync failed.", 500);
   }
 });
 

@@ -253,6 +253,43 @@ export class OrderService {
   }
 
   /**
+   * Safety net for missed webhooks: compares Shopify's orders from the last `hours` with the database and
+   * saves the ones that are missing or whose fulfillment status changed (fulfilled, cancelled). Orders
+   * the database already has unchanged are left alone.
+   */
+  async syncRecentFromShopify(hours = 48): Promise<{ added: number; updated: number }> {
+    if (isMockSupabase || shopifyClient.isMock) return { added: 0, updated: 0 };
+    const since = new Date(Date.now() - hours * 3_600_000).toISOString();
+    const orders = await shopifyClient.listRecentOrders(100, `created_at:>'${since}'`);
+    if (!orders.length) return { added: 0, updated: 0 };
+
+    const { data, error } = await supabase
+      .from("orders")
+      .select("shopify_order_id, fulfillment_status")
+      .in(
+        "shopify_order_id",
+        orders.map((o) => o.shopifyOrderId)
+      );
+    if (error) throw new Error(`Could not read orders: ${error.message}`);
+    const stored = new Map((data || []).map((r: any) => [r.shopify_order_id, r.fulfillment_status]));
+
+    let added = 0;
+    let updated = 0;
+    for (const o of orders) {
+      if (!stored.has(o.shopifyOrderId)) {
+        await this.saveOrder(o);
+        added++;
+        logger.info(`Order sync: added missed order ${o.orderNumber}.`);
+      } else if (stored.get(o.shopifyOrderId) !== o.fulfillmentStatus) {
+        await this.saveOrder(o);
+        updated++;
+        logger.info(`Order sync: ${o.orderNumber} is now ${o.fulfillmentStatus}.`);
+      }
+    }
+    return { added, updated };
+  }
+
+  /**
    * List recent orders for admin table.
    */
   async listOrders(limit = 20): Promise<Order[]> {

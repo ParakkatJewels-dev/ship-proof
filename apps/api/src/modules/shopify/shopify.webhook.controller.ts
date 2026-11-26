@@ -3,13 +3,14 @@ import { orderService } from "../orders/order.service.js";
 import { shopifyClient } from "../../integrations/shopify/shopify.client.js";
 import { DeliveryStatus } from "@shipproof/shared";
 import { logger } from "../../utils/logger.js";
-import { sendSuccess } from "../../utils/response.js";
+import { sendError, sendSuccess } from "../../utils/response.js";
 import { announceOrdersChanged } from "../../integrations/supabase/realtime.js";
 
 /**
  * Shopify expects a 2xx within a few seconds. The order handler does its work (about a second) before
- * answering, because on serverless hosting work started after the answer may be cut off. Failures are
- * logged and still answered with 2xx; Shopify does not need to retry them.
+ * answering, because on serverless hosting work started after the answer may be cut off. If saving fails
+ * (Shopify or the database unreachable), it answers with an error so Shopify sends the webhook again;
+ * the 5-minute order sync is a second safety net for anything still missed.
  */
 export class ShopifyWebhookController {
   /**
@@ -29,13 +30,16 @@ export class ShopifyWebhookController {
       const id: string | undefined = payload?.admin_graphql_api_id;
       const order = (id ? await shopifyClient.getOrderById(id) : null) ?? (await shopifyClient.getOrder(orderName));
       if (!order) {
-        logger.warn(`Shopify webhook for ${orderName}: order not found in Shopify, not saved.`);
-      } else {
-        await orderService.saveOrder(order);
-        if (opts.isNew) await announceOrdersChanged();
+        // Answered OK: Shopify's "Send test notification" uses an order that does not exist, and retrying
+        // it would only fail again. A real order that was not found yet is added by the order sync.
+        logger.warn(`Shopify webhook for ${orderName}: order not found in Shopify; the order sync will pick it up.`);
+        return sendSuccess(res, { received: true });
       }
+      await orderService.saveOrder(order);
+      if (opts.isNew) await announceOrdersChanged();
     } catch (err: any) {
-      logger.error(`Failed to sync order ${orderName} from webhook:`, err.message);
+      logger.error(`Failed to sync order ${orderName} from webhook; asking Shopify to retry:`, err.message);
+      return sendError(res, "Order could not be saved; please retry.", 503);
     }
     return sendSuccess(res, { received: true });
   }

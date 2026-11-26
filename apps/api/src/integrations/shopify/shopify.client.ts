@@ -359,11 +359,11 @@ export class ShopifyClient {
   }
 
   /** Most recent orders, newest first. Shopify returns the last 60 days unless the app has read_all_orders. */
-  async listRecentOrders(limit = 25): Promise<Order[]> {
+  async listRecentOrders(limit = 25, query = "-status:cancelled"): Promise<Order[]> {
     if (this.isMock) return [];
     const result = await this.graphql<{ orders: { nodes: ShopifyOrderNode[] } }>(ORDERS_QUERY, {
       first: Math.min(Math.max(limit, 1), 100),
-      query: "-status:cancelled",
+      query,
     });
     return this.unwrapOrders(result).map(mapShopifyOrder);
   }

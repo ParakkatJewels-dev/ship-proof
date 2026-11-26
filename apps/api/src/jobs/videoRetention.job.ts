@@ -1,5 +1,7 @@
 import cron from "node-cron";
 import { videoService } from "../modules/videos/video.service.js";
+import { orderService } from "../modules/orders/order.service.js";
+import { announceOrdersChanged } from "../integrations/supabase/realtime.js";
 import { logger } from "../utils/logger.js";
 
 /**
@@ -30,13 +32,25 @@ export function startVideoRetentionJob() {
     }
   };
 
-  logger.info("Starting video background jobs (retention hourly, Shopify retry every 5 minutes).");
+  const ordersSync = async () => {
+    try {
+      const { added, updated } = await orderService.syncRecentFromShopify();
+      if (added || updated) logger.info(`Order sync: ${added} added, ${updated} updated.`);
+      if (added) await announceOrdersChanged();
+    } catch (err) {
+      logger.error("Order sync failed:", err);
+    }
+  };
+
+  logger.info("Starting background jobs (retention hourly, Shopify retry and order sync every 5 minutes).");
   cron.schedule("0 * * * *", retention);
   cron.schedule("*/5 * * * *", shopifyRetry);
+  cron.schedule("*/5 * * * *", ordersSync);
 
   // Catch up on anything that came due while the API was down.
   setTimeout(() => {
     void retention();
     void shopifyRetry();
+    void ordersSync();
   }, 15_000).unref();
 }

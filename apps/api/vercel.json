@@ -2,7 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
     { "path": "/api/cron/retention", "schedule": "0 * * * *" },
-    { "path": "/api/cron/shopify-retry", "schedule": "*/5 * * * *" }
+    { "path": "/api/cron/shopify-retry", "schedule": "*/5 * * * *" },
+    { "path": "/api/cron/orders-sync", "schedule": "*/5 * * * *" }
   ],
   "functions": {
     "src/index.ts": { "maxDuration": 300 }
