@@ -23,8 +23,11 @@ export const agentConfig = {
   compressUpload: process.env.COMPRESS_UPLOAD !== "false",
   /** Quality of the compressed video: lower is sharper and larger. 28 looks close to the original. */
   compressCrf: parseInt(process.env.COMPRESS_CRF || "28", 10),
-  /** Frames per second of the compressed video. 15 is enough to see what was packed. */
-  compressFps: parseInt(process.env.COMPRESS_FPS || "15", 10),
+  /**
+   * Frames per second of the compressed video. 30 keeps hand movements smooth; 15 halved the size but looked
+   * jerky, especially with a phone camera over WiFi whose frames already arrive unevenly.
+   */
+  compressFps: parseInt(process.env.COMPRESS_FPS || "30", 10),
   /**
    * Ceiling on the video's data rate, in kilobits per second. 1000 means a 3-minute video is never more than
    * about 22 MB, however busy the scene. Quiet scenes stay smaller. 0 turns the ceiling off.
