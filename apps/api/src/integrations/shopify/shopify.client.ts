@@ -29,7 +29,6 @@ const ORDER_FIELDS = `
       sku
       quantity
       image { url }
-      variant { barcodes(first: 1) { nodes { value } } }
       originalUnitPriceSet { shopMoney { amount } }
     }
   }
@@ -124,7 +123,6 @@ interface ShopifyOrderNode {
       sku?: string | null;
       quantity: number;
       image?: { url: string } | null;
-      variant?: { barcodes: { nodes: { value: string }[] } } | null;
       originalUnitPriceSet: { shopMoney: { amount: string } };
     }[];
   };
@@ -172,7 +170,6 @@ export function mapShopifyOrder(node: ShopifyOrderNode): Order {
     quantity: li.quantity,
     price: li.originalUnitPriceSet.shopMoney.amount,
     imageUrl: li.image?.url,
-    barcode: li.variant?.barcodes.nodes[0]?.value,
     verified: false,
   }));
 
