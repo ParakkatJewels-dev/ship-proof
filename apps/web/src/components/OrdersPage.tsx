@@ -65,6 +65,8 @@ export function OrdersPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const filter = filterFromParam(searchParams.get("status"));
+  /** An order to show and highlight, for example the one whose packing was just cancelled. */
+  const focusId = searchParams.get("focus");
 
   const { orders: ordersData, device, packing, beginPacking } = useAppData();
   const {
@@ -211,8 +213,14 @@ export function OrdersPage() {
   // once it is packed) you are never left on a page that no longer exists.
   const listKey = `${filter}|${searchQuery.trim().toLowerCase()}`;
   const totalPages = pageCount(visible.length, pageSize);
+  // Until a page is chosen, open on the page that holds the focused order.
+  const focusIndex = focusId ? visible.findIndex((o) => o.id === focusId) : -1;
   const page = clampPage(
-    pageState.key === listKey ? pageState.page : 1,
+    pageState.key === listKey
+      ? pageState.page
+      : focusIndex >= 0
+        ? Math.floor(focusIndex / pageSize) + 1
+        : 1,
     totalPages,
   );
   const shownOrders = visible.slice((page - 1) * pageSize, page * pageSize);
@@ -382,7 +390,11 @@ export function OrdersPage() {
             )
           ) : (
             <div className="mt-5">
-              <OrdersTable orders={shownOrders} renderAction={renderAction} />
+              <OrdersTable
+                orders={shownOrders}
+                renderAction={renderAction}
+                highlightId={focusId}
+              />
             </div>
           )}
 

@@ -198,8 +198,11 @@ export function usePacking({
     return sessionId;
   };
 
-  /** Stops through the camera agent on this computer. With `discard`, the video is thrown away. */
-  const stopLocally = async (current: PackingSession, discard = false) => {
+  /** Stops through the camera agent on this computer. With `discard`, the video is thrown away. Resolves to whether it stopped. */
+  const stopLocally = async (
+    current: PackingSession,
+    discard = false,
+  ): Promise<boolean> => {
     setLocal({ ...current, status: "stopping" });
     try {
       const res = await fetch(`${AGENT_URL}/record/stop`, {
@@ -226,7 +229,7 @@ export function usePacking({
               : "Recording discarded. Nothing was saved.",
           });
         }
-        return;
+        return true;
       }
       const result = await res.json().catch(() => null);
       // The video is finished but not saved yet: review and trim it first.
@@ -237,6 +240,7 @@ export function usePacking({
         reviewToken: result?.reviewToken,
         videoSeconds: result?.videoSeconds,
       });
+      return true;
     } catch (err) {
       retakeRef.current = null;
       autoSaveRef.current = false;
@@ -246,6 +250,7 @@ export function usePacking({
         tone: "error",
         text: `Could not stop the recording: ${err instanceof Error ? err.message : "the camera agent on this computer did not answer"}.`,
       });
+      return false;
     }
   };
 
@@ -303,15 +308,15 @@ export function usePacking({
     }
   };
 
-  /** Throws the reviewed recording away. With `thenRecord`, a new recording of that order starts straight away. */
-  const discardReview = async (thenRecord?: OrderRecord) => {
-    if (session.status !== "review") return;
+  /** Throws the reviewed recording away. With `thenRecord`, a new recording of that order starts straight away. Resolves to whether it was thrown away. */
+  const discardReview = async (thenRecord?: OrderRecord): Promise<boolean> => {
+    if (session.status !== "review") return false;
     const current = session;
     setLocal({ ...current, status: "saving" });
     try {
       await reviewRequest("discard", {});
       if (current.sessionId) setEndedSessionId(current.sessionId);
-      if (thenRecord && beginStart(thenRecord)) return;
+      if (thenRecord && beginStart(thenRecord)) return true;
       setLocal({ status: "idle" });
       setMessage(
         thenRecord
@@ -321,13 +326,38 @@ export function usePacking({
             }
           : { tone: "ok", text: "Recording discarded. Nothing was saved." },
       );
+      return true;
     } catch (err) {
       setLocal({ ...current, status: "review" });
       setMessage({
         tone: "error",
         text: `Could not discard the recording: ${err instanceof Error ? err.message : "the camera agent did not answer"}.`,
       });
+      return false;
     }
+  };
+
+  /**
+   * Cancels packing: the recording (or the finished recording waiting for review) is thrown away and
+   * nothing is saved, so the order stays Pending and can be started again from the Orders page.
+   */
+  const cancel = async (): Promise<boolean> => {
+    const current = session;
+    let done = false;
+    if (current.status === "recording") {
+      retakeRef.current = null;
+      autoSaveRef.current = false;
+      done = await stopLocally(current, true);
+    } else if (current.status === "review") {
+      done = await discardReview();
+    }
+    // A failed stop has already said why; the packer stays on the packing page.
+    if (!done) return false;
+    setMessage({
+      tone: "ok",
+      text: `Packing ${current.orderNumber ?? "the order"} cancelled. Nothing was saved, and the order is still pending.`,
+    });
+    return true;
   };
 
   /** Throws the current recording away and starts a new one for the same order. */
@@ -371,6 +401,7 @@ export function usePacking({
     start,
     stop,
     retake,
+    cancel,
     saveReview,
     finish,
     finishing,

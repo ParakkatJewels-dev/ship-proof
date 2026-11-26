@@ -9,6 +9,7 @@ import {
   LoaderCircle,
   RotateCcw,
   Square,
+  X,
 } from "lucide-react";
 import { AGENT_URL, reviewVideoUrl } from "../lib/shipproofApi";
 import { formatDuration } from "../lib/usePacking";
@@ -28,15 +29,26 @@ export function PackingPage() {
   const { session } = packing;
   const order = orders.orders.find((o) => o.id === session.orderId);
 
-  // Leave for the Orders page once the recording has been saved. A retake never goes idle in between.
+  // Leave for the Orders page once the recording has been saved (or cancelled: then the Pending tab,
+  // where the order is waiting to be started again). A retake never goes idle in between.
+  // The order that was cancelled, so the Orders page can open on it and highlight it.
+  const cancelled = useRef<string | null>(null);
   const previous = useRef(session.status);
   useEffect(() => {
     if (previous.current !== "idle" && session.status === "idle")
-      router.push("/orders");
+      router.push(
+        cancelled.current
+          ? `/orders?status=pending&focus=${encodeURIComponent(cancelled.current)}`
+          : "/orders",
+      );
     previous.current = session.status;
   }, [session.status, router]);
 
-  const [confirmingRetake, setConfirmingRetake] = useState(false);
+  /** Which question is showing in the action bar, if any. */
+  const [confirming, setConfirming] = useState<"retake" | "cancel" | null>(
+    null,
+  );
+  const confirmingRetake = confirming === "retake";
 
   // The part of the recorded video to keep. Tied to the recording it belongs to, so a new recording starts untrimmed.
   const [clip, setClip] = useState<{
@@ -284,7 +296,39 @@ export function PackingPage() {
 
           {/* Actions */}
           <div className="bg-white rounded-[22px] p-4 sm:p-5">
-            {confirmingRetake ? (
+            {confirming === "cancel" ? (
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-sm">
+                  <span className="font-semibold">
+                    Cancel packing {session.orderNumber}?
+                  </span>{" "}
+                  <span className="text-muted">
+                    The recording is thrown away and the order stays pending.
+                  </span>
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setConfirming(null)}
+                    className="px-4 py-2.5 rounded-lg text-sm font-medium bg-canvas hover:bg-[#E1E5EF] cursor-pointer transition-colors"
+                  >
+                    {reviewing ? "Keep reviewing" : "Keep recording"}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setConfirming(null);
+                      cancelled.current = session.orderId ?? "";
+                      void packing.cancel().then((ok) => {
+                        if (!ok) cancelled.current = null;
+                      });
+                    }}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold text-white bg-[#D9443A] hover:bg-[#C23A31] cursor-pointer transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                    Yes, cancel
+                  </button>
+                </div>
+              </div>
+            ) : confirmingRetake ? (
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm">
                   <span className="font-semibold">
@@ -296,14 +340,14 @@ export function PackingPage() {
                 </p>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setConfirmingRetake(false)}
+                    onClick={() => setConfirming(null)}
                     className="px-4 py-2.5 rounded-lg text-sm font-medium bg-canvas hover:bg-[#E1E5EF] cursor-pointer transition-colors"
                   >
                     Keep recording
                   </button>
                   <button
                     onClick={() => {
-                      setConfirmingRetake(false);
+                      setConfirming(null);
                       if (order) {
                         if (reviewing) void packing.discardReview(order);
                         else packing.retake(order);
@@ -319,21 +363,32 @@ export function PackingPage() {
               </div>
             ) : (
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <button
-                  onClick={() => setConfirmingRetake(true)}
-                  disabled={
-                    (!recording && !(session.status === "review")) || !order
-                  }
-                  title={
-                    !order
-                      ? "Needs the order's product list"
-                      : "Discard this recording and start again"
-                  }
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold border border-[#E1E5EF] bg-white hover:bg-canvas disabled:opacity-50 disabled:hover:bg-white disabled:cursor-not-allowed cursor-pointer transition-colors"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  Retake
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={() => setConfirming("cancel")}
+                    disabled={!recording && session.status !== "review"}
+                    title="Stop without saving and go back to the orders"
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold border border-[#F0C9C5] text-[#B2453D] bg-white hover:bg-[#FBE6E4] disabled:opacity-50 disabled:hover:bg-white disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => setConfirming("retake")}
+                    disabled={
+                      (!recording && !(session.status === "review")) || !order
+                    }
+                    title={
+                      !order
+                        ? "Needs the order's product list"
+                        : "Discard this recording and start again"
+                    }
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-sm font-semibold border border-[#E1E5EF] bg-white hover:bg-canvas disabled:opacity-50 disabled:hover:bg-white disabled:cursor-not-allowed cursor-pointer transition-colors"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    Retake
+                  </button>
+                </div>
                 {reviewing ? (
                   <button
                     onClick={() =>
