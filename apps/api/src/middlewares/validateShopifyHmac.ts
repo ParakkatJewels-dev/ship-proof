@@ -7,11 +7,12 @@ import { logger } from "../utils/logger.js";
 
 /**
  * Verifies the X-Shopify-Hmac-SHA256 header against the raw request body.
- * Only demo mode (no store connected) skips the check; a missing header is always rejected otherwise.
+ * Whenever a webhook secret is set, or the API runs in production, every webhook must carry a valid
+ * signature. Only local demo mode (no store connected and no secret) skips the check.
  */
 export function validateShopifyHmac(req: Request, res: Response, next: NextFunction) {
-  if (shopifyClient.isMock) {
-    logger.warn("Shopify webhook accepted without verification (demo mode, no store connected).");
+  if (shopifyClient.isMock && !config.shopify.webhookSecret && config.nodeEnv !== "production") {
+    logger.warn("Shopify webhook accepted without verification (local demo mode, no store connected).");
     return next();
   }
 
