@@ -1,6 +1,7 @@
 import { supabase, isMockSupabase } from "./db.client.js";
 import { config } from "../../config/env.config.js";
 import { logger } from "../../utils/logger.js";
+import { devStorage } from "./devStorage.js";
 
 export class StorageService {
   private bucket = config.supabase.bucket;
@@ -10,10 +11,8 @@ export class StorageService {
    */
   async createSignedUploadUrl(filePath: string): Promise<{ signedUrl: string; token: string }> {
     if (isMockSupabase) {
-      return {
-        signedUrl: `https://mock-storage.supabase.co/upload/${this.bucket}/${filePath}`,
-        token: `mock-token-${Date.now()}`,
-      };
+      // Demo mode: the file is kept on this computer (.dev-data/videos).
+      return { signedUrl: devStorage.uploadUrl(filePath), token: `dev-${Date.now()}` };
     }
 
     const { data, error } = await supabase.storage
@@ -35,9 +34,7 @@ export class StorageService {
    * Generates a temporary signed download URL for viewing or customer playback.
    */
   async createSignedDownloadUrl(filePath: string, expiresInSeconds = 3600, downloadAs?: string): Promise<string> {
-    if (isMockSupabase) {
-      return `https://mock-storage.supabase.co/download/${this.bucket}/${filePath}?token=mock-token`;
-    }
+    if (isMockSupabase) return devStorage.downloadUrl(filePath, expiresInSeconds, downloadAs);
 
     const { data, error } = await supabase.storage
       .from(this.bucket)
@@ -54,7 +51,7 @@ export class StorageService {
 
   /** Size in bytes of a stored file, or null when it is not there. */
   async statObject(filePath: string): Promise<number | null> {
-    if (isMockSupabase) return 0;
+    if (isMockSupabase) return devStorage.size(filePath);
     const slash = filePath.lastIndexOf("/");
     const folder = filePath.slice(0, slash);
     const name = filePath.slice(slash + 1);
@@ -73,7 +70,7 @@ export class StorageService {
    */
   async deleteFile(filePath: string): Promise<boolean> {
     if (isMockSupabase) {
-      logger.info(`[Mock Storage] Deleted ${filePath}`);
+      devStorage.remove(filePath);
       return true;
     }
 

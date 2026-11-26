@@ -2,11 +2,12 @@ import { supabase, isMockSupabase } from "../../integrations/supabase/db.client.
 import { shopifyClient } from "../../integrations/shopify/shopify.client.js";
 import { Order, DeliveryStatus } from "@shipproof/shared";
 import { logger } from "../../utils/logger.js";
+import { devMap } from "../../utils/devData.js";
 
 // In-memory fallback orders for development
 const mockOrdersStore = new Map<string, Order>();
 /** Orders packed while no database is connected, by order id. Shopify also keeps this on the order itself. */
-const mockPacked = new Map<string, string>();
+const mockPacked = devMap<string>("packed-orders", isMockSupabase);
 
 export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const UUID = UUID_PATTERN;

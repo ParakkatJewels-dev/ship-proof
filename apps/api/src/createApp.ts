@@ -12,6 +12,8 @@ import { config } from "./config/env.config.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { productionProblems } from "./config/productionChecks.js";
 import { logger } from "./utils/logger.js";
+import { isMockSupabase } from "./integrations/supabase/db.client.js";
+import { devStorageRoutes } from "./integrations/supabase/devStorage.js";
 
 export function createApp() {
   const app = express();
@@ -76,6 +78,12 @@ export function createApp() {
   app.use("/api/webhooks/shopify", shopifyWebhookRoutes);
   app.use("/api/shopify", shopifyRoutes);
   app.use("/api/cron", cronRoutes);
+
+  // Local demo mode only: video files on this computer instead of Supabase Storage.
+  if (isMockSupabase && config.nodeEnv !== "production") {
+    app.use("/dev-storage", devStorageRoutes());
+    logger.warn("Demo mode: no Supabase configured. Test data and videos are kept in apps/api/.dev-data.");
+  }
 
   // Global Error Handler
   app.use(errorHandler);

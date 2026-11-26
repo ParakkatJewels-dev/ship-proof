@@ -1,5 +1,6 @@
 import { VideoRecord, VideoStatus } from "@shipproof/shared";
 import { supabase, isMockSupabase } from "../../integrations/supabase/db.client.js";
+import { devMap } from "../../utils/devData.js";
 
 /** A video as kept in the database: the public record plus the fields only the server may see. */
 export interface StoredVideo extends VideoRecord {
@@ -41,9 +42,10 @@ export interface VideoRepository {
 
 /* ------------------------------- in memory -------------------------------- */
 
-const memory = new Map<string, StoredVideo>();
+// Demo mode (no Supabase): kept in .dev-data so test videos survive an API restart.
+const memory = devMap<StoredVideo>("videos", isMockSupabase);
 /** Extra watch links in demo mode: secret hash -> video id. */
-const memoryShares = new Map<string, string>();
+const memoryShares = devMap<string>("share-links", isMockSupabase);
 
 const newestFirst = (a: StoredVideo, b: StoredVideo) => b.createdAt.localeCompare(a.createdAt);
 
