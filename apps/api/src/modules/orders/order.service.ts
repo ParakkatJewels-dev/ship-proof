@@ -164,6 +164,8 @@ export class OrderService {
         fulfillment_status: order.fulfillmentStatus,
         delivery_status: order.deliveryStatus,
         delivered_at: order.deliveredAt,
+        // When the order was placed in Shopify, so the newest orders list first (not when ShipProof saved them).
+        ...(order.createdAt ? { created_at: order.createdAt } : {}),
         updated_at: new Date().toISOString(),
       },
       { onConflict: "shopify_order_id" }
