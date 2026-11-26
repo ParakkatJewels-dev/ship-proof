@@ -6,7 +6,7 @@ import { config } from "../../config/env.config.js";
 import { logger } from "../../utils/logger.js";
 import { HttpError } from "../../utils/httpError.js";
 import { createWatchToken, hashWatchToken, isWellFormedToken } from "../../utils/watchToken.js";
-import { orderService } from "../orders/order.service.js";
+import { orderService, type WatchItem } from "../orders/order.service.js";
 import { UUID_PATTERN } from "../orders/order.service.js";
 import { videoRepository as repo, StoredVideo } from "./video.repository.js";
 import { v4 as uuidv4 } from "uuid";
@@ -34,7 +34,17 @@ export interface VideoSummary {
 
 /** What a customer's watch page may show for a link. */
 export type WatchResult =
-  | { state: "ready"; orderNumber: string; durationSeconds: number; playbackUrl: string; expiresAt: string | null }
+  | {
+      state: "ready";
+      orderNumber: string;
+      durationSeconds: number;
+      playbackUrl: string;
+      expiresAt: string | null;
+      /** The products in the order: name, variant, picture and quantity only. */
+      items: WatchItem[];
+      /** Local demo mode: the order is one of the dashboard's demo orders, which the web app knows. */
+      demo?: boolean;
+    }
   | { state: "expired" | "unavailable"; orderNumber?: string };
 
 /** How long a playback address works. It is created fresh every time the video is opened. */
@@ -306,6 +316,9 @@ export class VideoService {
       durationSeconds: video.durationSeconds,
       playbackUrl: await storageService.createSignedDownloadUrl(video.storagePath, PLAYBACK_SECONDS),
       expiresAt: video.expiresAt ?? null,
+      ...(isMockSupabase && shopifyClient.isMock
+        ? { items: [], demo: true }
+        : { items: await orderService.getWatchItems(video.orderId, orderNumber).catch(() => []) }),
     };
   }
 

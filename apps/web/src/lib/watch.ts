@@ -1,3 +1,11 @@
+/** One product in the order, as shown on the watch page. */
+export interface WatchItem {
+  title: string;
+  variantTitle?: string;
+  quantity: number;
+  imageUrl?: string;
+}
+
 /** What the API says about a customer watch link. */
 export type WatchData =
   | {
@@ -6,6 +14,10 @@ export type WatchData =
       durationSeconds: number;
       playbackUrl: string;
       expiresAt: string | null;
+      /** The products in the order. Missing from older API versions. */
+      items?: WatchItem[];
+      /** Local demo mode: take the products from the dashboard's demo orders. */
+      demo?: boolean;
     }
   | { state: "expired"; orderNumber?: string }
   | { state: "unavailable" }

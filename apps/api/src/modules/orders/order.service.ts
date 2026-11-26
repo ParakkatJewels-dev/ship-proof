@@ -40,6 +40,14 @@ function rowToOrder(d: any): Order {
   };
 }
 
+/** One product line on the public watch page. */
+export interface WatchItem {
+  title: string;
+  variantTitle?: string;
+  quantity: number;
+  imageUrl?: string;
+}
+
 export class OrderService {
   /**
    * Find order by number (e.g. #1042 or 1042) or UUID.
@@ -90,6 +98,28 @@ export class OrderService {
     }
 
     return null;
+  }
+
+  /**
+   * The products of an order as shown on the public watch page: name, variant, picture and quantity
+   * only. No prices, customer or address, because anyone with the link can open that page.
+   */
+  async getWatchItems(orderId: string, orderNumber?: string): Promise<WatchItem[]> {
+    let items: Order["items"] | undefined;
+    if (!isMockSupabase) {
+      if (!UUID.test(orderId)) return [];
+      const { data } = await supabase.from("orders").select("items").eq("id", orderId).maybeSingle();
+      items = data?.items ?? undefined;
+    } else {
+      const cached = [...mockOrdersStore.values()].find((o) => o.id === orderId);
+      items = (cached ?? (orderNumber ? await this.getOrder(orderNumber) : null))?.items;
+    }
+    return (items ?? []).map((i) => ({
+      title: i.title,
+      variantTitle: i.variantTitle || undefined,
+      quantity: i.quantity,
+      imageUrl: i.imageUrl || undefined,
+    }));
   }
 
   /**

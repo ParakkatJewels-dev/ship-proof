@@ -2,6 +2,24 @@ import type { Metadata } from "next";
 import { PackageCheck, Clock, VideoOff, WifiOff } from "lucide-react";
 import { loadWatch } from "../../../lib/watch";
 import { WatchPlayer } from "../../../components/WatchPlayer";
+import { ProductThumb } from "../../../components/ui";
+import { DEMO_ORDERS } from "../../../lib/orders";
+import type { WatchItem } from "../../../lib/watch";
+
+/** The products to list: the order's own, or in local demo mode the matching demo order's. */
+function productsOf(data: {
+  orderNumber: string;
+  items?: WatchItem[];
+  demo?: boolean;
+}): WatchItem[] {
+  if (!data.demo) return data.items ?? [];
+  const demo = DEMO_ORDERS.find((o) => o.orderNumber === data.orderNumber);
+  return (demo?.items ?? []).map((i) => ({
+    title: i.name,
+    quantity: i.quantity,
+    imageUrl: i.imageUrl,
+  }));
+}
 
 // Every visit asks the API again, so an expired or deleted video is never shown from a cache.
 export const dynamic = "force-dynamic";
@@ -44,6 +62,8 @@ export default async function WatchPage({
 }) {
   const { token } = await params;
   const data = await loadWatch(token);
+  const products = data.state === "ready" ? productsOf(data) : [];
+  const itemCount = products.reduce((n, i) => n + i.quantity, 0);
 
   return (
     <main className="min-h-screen bg-canvas text-ink flex items-start sm:items-center justify-center px-4 py-8">
@@ -71,6 +91,42 @@ export default async function WatchPage({
               This video was recorded while your order was packed.
             </p>
             <WatchPlayer token={token} initialUrl={data.playbackUrl} />
+
+            {products.length > 0 && (
+              <section className="mt-6">
+                <div className="flex items-center justify-between gap-3 mb-2">
+                  <h2 className="text-base font-semibold">In this order</h2>
+                  <span className="text-xs font-semibold text-accent-dark bg-accent-pale rounded-full px-2.5 py-0.5">
+                    {itemCount} {itemCount === 1 ? "item" : "items"}
+                  </span>
+                </div>
+                <ul className="rounded-2xl border border-[#E6E8F0] divide-y divide-[#E6E8F0]">
+                  {products.map((item, i) => (
+                    <li
+                      key={`${item.title}-${i}`}
+                      className="flex items-center gap-3 px-4 py-3"
+                    >
+                      <ProductThumb
+                        src={item.imageUrl}
+                        name={item.title}
+                        size={48}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{item.title}</p>
+                        {item.variantTitle && (
+                          <p className="text-xs text-muted mt-0.5">
+                            {item.variantTitle}
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-sm font-semibold tabular-nums shrink-0">
+                        × {item.quantity}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </>
         )}
 
