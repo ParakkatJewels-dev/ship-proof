@@ -2,11 +2,10 @@
   "name": "@shipproof/api",
   "version": "1.0.0",
   "description": "ShipProof Cloud API - Order Packing Video Verification System",
-  "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "tsx watch src/index.ts",
+    "start": "node dist/local.js",
+    "dev": "tsx watch src/local.ts",
     "user:create": "tsx src/scripts/createUser.ts",
     "shopify:check": "tsx src/scripts/shopifySetup.ts",
     "shopify:webhooks": "tsx src/scripts/shopifySetup.ts --webhooks",

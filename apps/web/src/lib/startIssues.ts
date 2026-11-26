@@ -2,7 +2,7 @@ import type { ActiveDevice } from "./shipproofApi";
 
 /** A reason packing could not start, with what the packer can do about it. */
 export interface StartIssue {
-  kind: "server" | "no-camera" | "camera-error" | "no-response" | "start-failed";
+  kind: "server" | "no-camera" | "camera-error" | "no-response" | "start-failed" | "agent-unreachable";
   title: string;
   detail: string;
   steps: string[];
@@ -45,11 +45,23 @@ export const issues = {
     ],
   }),
 
+  /** The camera program on this computer did not answer: it isn't running, or this isn't the packing computer. */
+  agentUnreachable: (): StartIssue => ({
+    kind: "agent-unreachable",
+    title: "Can't reach the camera on this computer",
+    detail: "Recording starts from the packing computer, where the ShipProof camera program runs. It did not answer.",
+    steps: [
+      "Use ShipProof on the packing computer (the one with the camera and barcode scanner).",
+      "Check that the camera agent is running there (run npm run dev:agent).",
+      "If the browser asks to allow access to devices on your local network, choose Allow.",
+    ],
+  }),
+
   /** The command was sent but the camera agent never answered. */
   noResponse: (): StartIssue => ({
     kind: "no-response",
     title: "The camera didn't respond",
-    detail: "The start command was sent, but the camera agent did not answer in time.",
+    detail: "The start command was sent, but the camera agent on this computer did not answer in time.",
     steps: [
       "Look at the camera agent window for an error message.",
       "Restart the camera agent (run npm run dev:agent), then try again.",

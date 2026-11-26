@@ -9,7 +9,7 @@ Supabase project or a real Shopify store yet; the "Check" line of each step is h
 | Part | Where | Why |
 |---|---|---|
 | Web app (Next.js) | Vercel, or any Node host | Dashboard and the customer watch page |
-| API (Express, WebSocket, scheduled jobs) | A host that keeps a process running (Railway, Render, Fly.io, a VPS) | It holds the live camera connection and runs the hourly retention job, so it cannot be a serverless function. It also needs `ffmpeg` installed to trim stored videos. |
+| API (Express) | Vercel, as its own project with Root Directory `apps/api` (or any Node host: `npm start`) | No long-lived connections: the camera agent reports its status over HTTPS, and the retention and Shopify retry jobs run as Vercel Cron (`apps/api/vercel.json`, protected by `CRON_SECRET`). Trimming a video that is only in the cloud needs `ffmpeg`, which Vercel does not have; trimming the copy on the packing computer works everywhere. |
 | Database and file storage | Supabase | Orders, video records, video files |
 | Camera agent | The packing computer | Records and uploads; keeps working without internet |
 | Shopify extension | Shopify | Shows the Watch button on the customer's order page |
@@ -82,8 +82,12 @@ Check: `https://proof.yourstore.com/login` loads, and signing in works with the 
 
 ## 5. The camera agent
 
-On the packing computer set `CLOUD_API_URL` to the API address, `CLOUD_WS_URL` to its `wss://` address, and
-`STATION_API_KEY` to the same value the API has. Set `ALLOWED_ORIGINS` to the web app's address.
+On the packing computer set `CLOUD_API_URL` to the API address and `STATION_API_KEY` to the same value the API
+has. Set `ALLOWED_ORIGINS` to the web app's address.
+
+Start and stop go straight from the dashboard to the camera agent on the same computer, so packing is done in
+the browser on the packing computer. The first time the hosted dashboard talks to the agent, the browser may ask
+to allow access to devices on the local network: choose Allow.
 
 ## 6. Customer order page
 

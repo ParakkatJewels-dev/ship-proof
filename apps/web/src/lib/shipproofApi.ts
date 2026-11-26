@@ -14,8 +14,6 @@ export const AGENT_URL = (
 export const reviewVideoUrl = (sessionId: string, token: string) =>
   `${AGENT_URL}/review/${encodeURIComponent(sessionId)}.mp4?token=${encodeURIComponent(token)}`;
 
-/** WebSocket hub on the API that relays start/stop commands to the connected camera device. */
-export const STATIONS_WS_URL = `${API_URL.replace(/^http/, "ws")}/ws/stations?type=client`;
 
 /** Order as returned by the API (matches Order in @shipproof/shared). */
 interface ApiOrder {

@@ -5,10 +5,13 @@ import stationRoutes from "./modules/stations/station.routes.js";
 import videoRoutes from "./modules/videos/video.routes.js";
 import shopifyWebhookRoutes from "./modules/shopify/shopify.webhook.routes.js";
 import shopifyRoutes from "./modules/shopify/shopify.routes.js";
+import cronRoutes from "./modules/cron/cron.routes.js";
 import authRoutes from "./modules/auth/auth.routes.js";
 import watchRoutes from "./modules/watch/watch.routes.js";
 import { config } from "./config/env.config.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
+import { productionProblems } from "./config/productionChecks.js";
+import { logger } from "./utils/logger.js";
 
 export function createApp() {
   const app = express();
@@ -47,10 +50,22 @@ export function createApp() {
     })
   );
 
+  // Refuse to serve in production with an unsafe or incomplete setup. The health check still answers,
+  // with the list of what is missing, so a fresh deployment says what to fix.
+  const problems = productionProblems();
+  if (problems.length) logger.error(`The API is not ready for production: ${problems.join(" | ")}`);
+
   // Healthcheck
   app.get("/health", (_req, res) => {
+    if (problems.length) return res.status(503).json({ status: "not-configured", problems });
     res.json({ status: "healthy", timestamp: new Date().toISOString() });
   });
+
+  if (problems.length) {
+    app.use((_req, res) => {
+      res.status(503).json({ success: false, error: "The ShipProof server is not fully set up yet. Open /health to see what is missing." });
+    });
+  }
 
   // REST API Routes
   app.use("/api/auth", authRoutes);
@@ -60,6 +75,7 @@ export function createApp() {
   app.use("/api/videos", videoRoutes);
   app.use("/api/webhooks/shopify", shopifyWebhookRoutes);
   app.use("/api/shopify", shopifyRoutes);
+  app.use("/api/cron", cronRoutes);
 
   // Global Error Handler
   app.use(errorHandler);

@@ -4,7 +4,7 @@ import { fileManager } from "./core/fileManager.js";
 import { streamMonitor } from "./core/streamMonitor.js";
 import { discoverConnectedCameras } from "./utils/deviceDiscovery.js";
 import { createLocalHttpServer } from "./network/localHttpServer.js";
-import { wsClient } from "./network/wsClient.js";
+import { cloudReporter } from "./network/cloudClient.js";
 import { recorder } from "./core/ffmpeg.recorder.js";
 import { probeCamera } from "./core/cameraInfo.js";
 import { recoverInterruptedSessions, uploadQueue } from "./network/uploadQueue.js";
@@ -25,9 +25,8 @@ async function main() {
   // 3a. Recover recordings that were cut off by a power cut or crash, then start the upload queue.
   recoverInterruptedSessions();
   uploadQueue.start();
-  recorder.onAutoStop = (result) => {
-    wsClient.announceAutoStop(result);
-  };
+  // A recording that ended by itself (maximum length) shows up on the dashboard with the next report.
+  recorder.onAutoStop = () => cloudReporter.reportSoon();
 
   // 3. Start stream health monitor
   streamMonitor.startHealthCheck();
@@ -39,11 +38,11 @@ async function main() {
     agentLogger.info(`Local Station API listening on http://localhost:${agentConfig.localHttpPort}`);
   });
 
-  // 5. Connect to Cloud WebSocket Gateway
-  wsClient.connect();
+  // 5. Report this device's status to ShipProof every few seconds, and soon after anything changes.
+  cloudReporter.start();
 
   // Upload progress reaches the dashboard as it happens.
-  uploadQueue.onChange = () => wsClient.heartbeatNow();
+  uploadQueue.onChange = () => cloudReporter.reportSoon();
 
   // 6. Read what size and speed the camera really delivers, for the dashboard.
   probeCamera(() => recorder.isRecording());

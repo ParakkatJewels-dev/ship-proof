@@ -13,6 +13,7 @@ import { streamMonitor } from "../core/streamMonitor.js";
 import { agentLogger } from "../utils/localLogger.js";
 import { findSavedCopy, savedToken, trimSavedCopy } from "../core/saved.js";
 import { probeDurationSeconds } from "../core/review.js";
+import { cloudReporter } from "./cloudClient.js";
 
 export function createLocalHttpServer() {
   const app = express();
@@ -105,6 +106,7 @@ export function createLocalHttpServer() {
         end: Number.isFinite(end) ? end : undefined,
       });
       uploadQueue.kick();
+      cloudReporter.reportSoon();
       return res.json({
         success: true,
         trimmed: !!approved.trimmed,
@@ -126,6 +128,7 @@ export function createLocalHttpServer() {
     if (busyReviews.has(req.params.sessionId))
       return res.status(409).json({ error: "This recording is being saved." });
     discardSession(found.dir);
+    cloudReporter.reportSoon();
     return res.json({ success: true });
   });
 
@@ -183,7 +186,8 @@ export function createLocalHttpServer() {
     });
   });
 
-  // Local instant recording start trigger (Zero latency)
+  // Start and stop come straight from the dashboard on this computer (only the allowed dashboard
+  // origins may call this port; see the check at the top).
   app.post("/record/start", (req, res) => {
     try {
       const { orderId, orderNumber, sessionId, packerId } = req.body;
@@ -199,7 +203,13 @@ export function createLocalHttpServer() {
         sessionId,
         packerId || "packer-station",
       );
-      return res.json({ success: true, session });
+      cloudReporter.reportSoon();
+      return res.json({
+        success: true,
+        sessionId,
+        startedAt: new Date(session.startTime).toISOString(),
+        previewToken: session.previewToken,
+      });
     } catch (err: any) {
       return res.status(500).json({ error: err.message });
     }
@@ -218,6 +228,7 @@ export function createLocalHttpServer() {
 
       // Upload in the background; the queue retries until the cloud confirms.
       if (!result.discarded) uploadQueue.kick();
+      cloudReporter.reportSoon();
 
       return res.json({ success: true, ...result });
     } catch (err: any) {
