@@ -28,7 +28,7 @@ export function WatchPlayer({
 
   if (failed) {
     return (
-      <div className="aspect-video w-full rounded-2xl bg-canvas flex flex-col items-center justify-center gap-3 text-center p-6">
+      <div className="aspect-video lg:aspect-auto lg:h-full w-full rounded-2xl bg-canvas flex flex-col items-center justify-center gap-3 text-center p-6">
         <p className="font-semibold">The video could not be played</p>
         <p className="text-sm text-muted">
           Check your internet connection, then try again.
@@ -53,7 +53,8 @@ export function WatchPlayer({
       preload="metadata"
       controlsList="nodownload"
       onError={onError}
-      className="w-full aspect-video rounded-2xl bg-black"
+      // On large screens the video fills the height it is given, keeping its shape (letterboxed).
+      className="w-full aspect-video lg:aspect-auto lg:h-full rounded-2xl bg-black object-contain"
     />
   );
 }
