@@ -66,6 +66,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   const scanning = useRef(false);
   // A barcode scanned while the last recording is still being closed. It starts as soon as the camera is free.
   const queuedScan = useRef<string | null>(null);
+  /** The exact code that started the current recording by scan. Scanning it again always finishes it. */
+  const startedByScan = useRef<{ code: string; orderId: string } | null>(null);
   // A problem found before starting, with what to do once it is fixed.
   const [preflight, setPreflight] = useState<{
     issue: StartIssue;
@@ -200,10 +202,18 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
 
     const current = packing.session;
     if (current.status === "recording") {
+      // A label may hold more than the bare number (a "#", a prefix, a link), so the order counts as the
+      // same when the code is the one that started this recording, or contains its number on its own.
+      const number = current.orderNumber?.replace(/^#/, "") ?? "";
+      const started = startedByScan.current;
       const sameOrder =
-        current.orderNumber?.replace(/^#/, "") === code ||
+        (!!started &&
+          started.orderId === current.orderId &&
+          started.code.toLowerCase() === code.toLowerCase()) ||
+        number === code ||
         current.orderId === code ||
-        !!current.orderId?.endsWith(`/${code}`);
+        !!current.orderId?.endsWith(`/${code}`) ||
+        (!!number && (code.match(/\d+/g) ?? ([] as string[])).includes(number));
       if (sameOrder) {
         // A scanner can read a label twice in a row. Ignore a second read right after the first.
         if (packing.elapsedSeconds < MIN_SECONDS_BEFORE_FINISH_SCAN) return;
@@ -212,7 +222,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       }
       void showToast(
         "error",
-        `Scan ${current.orderNumber} again to finish it before starting another order.`,
+        `You scanned "${raw.trim()}". Scan ${current.orderNumber} again to finish it before starting another order.`,
         "Recording in progress",
       );
       return;
@@ -276,6 +286,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         );
         return;
       }
+      startedByScan.current = { code, orderId: order.id };
       beginPacking(order);
     } finally {
       scanning.current = false;
