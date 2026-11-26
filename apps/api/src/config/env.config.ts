@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import ffmpegStatic from "ffmpeg-static";
 
 dotenv.config();
 
@@ -47,8 +48,11 @@ export const config = {
     .filter(Boolean),
   /** Shared secret the camera agents send. In production every request without it is refused. */
   stationApiKey: process.env.STATION_API_KEY || "",
-  /** ffmpeg on the machine that runs this API, used to trim videos stored in the cloud. */
-  ffmpegPath: process.env.FFMPEG_PATH || "ffmpeg",
+  /**
+   * ffmpeg, used to trim videos stored in the cloud. Hosting such as Vercel has no ffmpeg installed, so
+   * the copy bundled with the ffmpeg-static package is used; FFMPEG_PATH overrides it.
+   */
+  ffmpegPath: process.env.FFMPEG_PATH || (ffmpegStatic as unknown as string | null) || "ffmpeg",
   retention: {
     /** Days a video is kept after the order is delivered. The database (table retention_policy) decides the real date. */
     daysAfterDelivery: parseInt(process.env.VIDEO_RETENTION_DAYS || "30", 10),

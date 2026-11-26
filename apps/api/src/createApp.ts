@@ -1,3 +1,4 @@
+import fs from "fs";
 import express from "express";
 import cors from "cors";
 import orderRoutes from "./modules/orders/order.routes.js";
@@ -60,7 +61,9 @@ export function createApp() {
   // Healthcheck
   app.get("/health", (_req, res) => {
     if (problems.length) return res.status(503).json({ status: "not-configured", problems });
-    res.json({ status: "healthy", timestamp: new Date().toISOString() });
+    // "trimming" says whether the ffmpeg program used to trim stored videos is present on this server.
+    const trimming = config.ffmpegPath === "ffmpeg" || fs.existsSync(config.ffmpegPath);
+    res.json({ status: "healthy", trimming, timestamp: new Date().toISOString() });
   });
 
   if (problems.length) {
