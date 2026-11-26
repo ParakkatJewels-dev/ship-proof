@@ -166,13 +166,23 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   }, [problem?.kind, problem?.detail]);
 
   /** Checks the camera, then starts recording the order. The packing page opens once recording is confirmed. */
-  const beginPacking = (order: OrderRecord) =>
-    whenReady(() => {
+  const beginPacking = (order: OrderRecord) => {
+    // Never record an order that was cancelled in Shopify, whichever way it was opened.
+    if (order.cancelled) {
+      void showToast(
+        "error",
+        `Order ${order.orderNumber} was cancelled in Shopify, so it can't be packed.`,
+        "Order cancelled",
+      );
+      return;
+    }
+    return whenReady(() => {
       if (packing.start(order)) {
         openWhenRecording.current = true;
         void showStartingCamera();
       }
     });
+  };
 
   /**
    * A barcode scan works like a switch:
@@ -247,6 +257,14 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
           "error",
           `No order #${code} was found${orders.shopify.state === "live" ? " in Shopify" : ""}. Scan again or enter the number by hand.`,
           "Order not found",
+        );
+        return;
+      }
+      if (order.cancelled) {
+        void showToast(
+          "error",
+          `Order ${order.orderNumber} was cancelled in Shopify, so it can't be packed.`,
+          "Order cancelled",
         );
         return;
       }

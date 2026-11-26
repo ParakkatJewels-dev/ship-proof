@@ -18,6 +18,7 @@ const ORDER_FIELDS = `
   updatedAt
   currencyCode
   displayFulfillmentStatus
+  cancelledAt
   tags
   totalPriceSet { shopMoney { amount } }
   customer { displayName }
@@ -87,6 +88,9 @@ export const PACKING_METAFIELDS = [
 ] as const;
 
 /** Scopes ShipProof needs on the Shopify app. */
+/** The fulfillment status ShipProof stores for an order that was cancelled in Shopify. */
+export const CANCELLED = "cancelled";
+
 export const REQUIRED_SCOPES = ["read_orders", "write_orders", "read_customers", "read_fulfillments"];
 
 /* -------------------------------------------------------------------------- */
@@ -113,6 +117,7 @@ interface ShopifyOrderNode {
   updatedAt: string;
   currencyCode: string;
   displayFulfillmentStatus: string;
+  cancelledAt?: string | null;
   totalPriceSet: { shopMoney: { amount: string } };
   customer?: { displayName?: string | null } | null;
   lineItems: {
@@ -181,7 +186,9 @@ export function mapShopifyOrder(node: ShopifyOrderNode): Order {
     customerEmail: node.email || "",
     currency: node.currencyCode,
     totalPrice: node.totalPriceSet.shopMoney.amount,
-    fulfillmentStatus: node.displayFulfillmentStatus.toLowerCase(),
+    // A cancelled order is stored with the status "cancelled", so ShipProof leaves it out of its lists
+    // and will not start packing it.
+    fulfillmentStatus: node.cancelledAt ? CANCELLED : node.displayFulfillmentStatus.toLowerCase(),
     deliveryStatus: delivery.status,
     deliveredAt: delivery.deliveredAt,
     // Written by ShipProof when the video is saved. It lives on the Shopify order itself, so "Packed"

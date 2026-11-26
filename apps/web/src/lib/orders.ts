@@ -17,6 +17,8 @@ export interface OrderRecord {
   placedTime: string;
   placedDate: string;
   status: "Pending" | "Packed" | "Dispatched";
+  /** Cancelled in Shopify: never listed, and packing it is refused. */
+  cancelled?: boolean;
   thumbnailUrl: string;
   items: OrderItem[];
 }

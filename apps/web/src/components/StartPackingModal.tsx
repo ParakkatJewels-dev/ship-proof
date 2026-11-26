@@ -52,13 +52,15 @@ export function StartPackingModal({ onClose }: { onClose: () => void }) {
   // Why the confirm button can't be used yet, if anything.
   const blocker = !order
     ? null
-    : order.status !== "Pending"
-      ? `Order ${order.orderNumber} is already ${order.status.toLowerCase()}.`
-      : packing.session.status !== "idle"
-        ? `Finish packing ${packing.session.orderNumber} first.`
-        : !device.connected
-          ? "No camera device is connected. Start the camera agent on the packing station."
-          : null;
+    : order.cancelled
+      ? `Order ${order.orderNumber} was cancelled in Shopify, so it can't be packed.`
+      : order.status !== "Pending"
+        ? `Order ${order.orderNumber} is already ${order.status.toLowerCase()}.`
+        : packing.session.status !== "idle"
+          ? `Finish packing ${packing.session.orderNumber} first.`
+          : !device.connected
+            ? "No camera device is connected. Start the camera agent on the packing station."
+            : null;
 
   const confirm = () => {
     if (!order || blocker) return;

@@ -130,6 +130,13 @@ export function useOrders(limit = 50) {
         setSearchMessage(`No Shopify order ${q.startsWith("#") ? q : `#${q}`}`);
         return null;
       }
+      // A cancelled order is never added to the list; the caller refuses to pack it.
+      if (found.cancelled) {
+        setSearchMessage(
+          `Order ${found.orderNumber} was cancelled in Shopify.`,
+        );
+        return found;
+      }
       setOrders((prev) => [found, ...prev.filter((o) => o.id !== found.id)]);
       return found;
     } catch (err) {

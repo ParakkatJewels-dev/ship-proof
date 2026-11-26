@@ -14,7 +14,6 @@ export const AGENT_URL = (
 export const reviewVideoUrl = (sessionId: string, token: string) =>
   `${AGENT_URL}/review/${encodeURIComponent(sessionId)}.mp4?token=${encodeURIComponent(token)}`;
 
-
 /** Order as returned by the API (matches Order in @shipproof/shared). */
 interface ApiOrder {
   id: string;
@@ -83,6 +82,7 @@ export function toOrderRecord(o: ApiOrder): OrderRecord {
     placedDate: dateLabel(created),
     // Packed is decided by the server (a saved video), so it is still true after a reload or a shipment.
     status: o.packedAt ? "Packed" : shipped ? "Dispatched" : "Pending",
+    cancelled: o.fulfillmentStatus === "cancelled",
     thumbnailUrl: o.items.find((it) => it.imageUrl)?.imageUrl || "",
     items: o.items.map((it) => ({
       id: it.id,

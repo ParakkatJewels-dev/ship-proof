@@ -1,5 +1,5 @@
 import { supabase, isMockSupabase } from "../../integrations/supabase/db.client.js";
-import { shopifyClient } from "../../integrations/shopify/shopify.client.js";
+import { shopifyClient, CANCELLED } from "../../integrations/shopify/shopify.client.js";
 import { Order, DeliveryStatus } from "@shipproof/shared";
 import { logger } from "../../utils/logger.js";
 import { devMap } from "../../utils/devData.js";
@@ -261,9 +261,11 @@ export class OrderService {
       if (!shopifyClient.isMock) {
         const orders = await shopifyClient.listRecentOrders(limit);
         for (const o of orders) mockOrdersStore.set(o.orderNumber.replace(/^#/, ""), o);
-        return orders.map((o) => this.withMockPacked(o));
+        return orders.filter((o) => o.fulfillmentStatus !== CANCELLED).map((o) => this.withMockPacked(o));
       }
-      return Array.from(mockOrdersStore.values()).map((o) => this.withMockPacked(o));
+      return Array.from(mockOrdersStore.values())
+        .filter((o) => o.fulfillmentStatus !== CANCELLED)
+        .map((o) => this.withMockPacked(o));
     }
 
     // With a database, seed it from Shopify on first use; webhooks keep it current afterwards.
@@ -273,9 +275,11 @@ export class OrderService {
       for (const o of orders) await this.saveOrder(o);
     }
 
+    // Orders cancelled in Shopify are hidden. (null is kept: "neq" alone would also drop rows without a status.)
     const { data } = await supabase
       .from("orders")
       .select("*")
+      .or(`fulfillment_status.is.null,fulfillment_status.neq.${CANCELLED}`)
       .order("created_at", { ascending: false })
       .limit(limit);
 
