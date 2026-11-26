@@ -19,13 +19,32 @@ export function Card({
   );
 }
 
-const STATUS_STYLES: Record<OrderRecord["status"], string> = {
+/** "Processing": recorded and saved, but the video is still being compressed or uploaded. */
+type ShownStatus = OrderRecord["status"] | "Processing";
+
+const STATUS_STYLES: Record<ShownStatus, string> = {
   Pending: "bg-[#F6ECDD] text-[#8A5A1C]",
+  Processing: "bg-[#E4E9FB] text-[#3446A8]",
   Packed: "bg-[#E3EFE5] text-[#2F6B3F]",
   Dispatched: "bg-[#ECEEF3] text-[#525868]",
 };
 
-export function StatusPill({ status }: { status: OrderRecord["status"] }) {
+/** Order numbers ("19441", without "#") whose video is still on its way to the cloud. */
+export function processingOrderNumbers(
+  uploads: { orderNumber: string; state: string }[],
+): Set<string> {
+  return new Set(
+    uploads
+      .filter((u) => u.state !== "done")
+      .map((u) => u.orderNumber.replace(/^#/, "")),
+  );
+}
+
+export function isProcessing(order: OrderRecord, processing?: Set<string>) {
+  return !!processing?.has(order.orderNumber.replace(/^#/, ""));
+}
+
+export function StatusPill({ status }: { status: ShownStatus }) {
   return (
     <span
       className={`shrink-0 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${STATUS_STYLES[status]}`}
@@ -44,10 +63,13 @@ export function OrdersTable({
   orders,
   highlightId,
   renderAction,
+  processing,
 }: {
   orders: OrderRecord[];
   highlightId?: string | null;
   renderAction?: (order: OrderRecord) => React.ReactNode;
+  /** Orders whose video is still uploading; they show "Processing" instead of their status. */
+  processing?: Set<string>;
 }) {
   // Every cell draws its own right and bottom border, giving a bordered grid. The last column and
   // last row drop theirs because the wrapper supplies the outer border.
@@ -70,7 +92,10 @@ export function OrdersTable({
             <th scope="col" className={`${head} w-[36%]`}>
               Product name
             </th>
-            <th scope="col" className={`${head} text-right w-px whitespace-nowrap`}>
+            <th
+              scope="col"
+              className={`${head} text-right w-px whitespace-nowrap`}
+            >
               Qty
             </th>
             <th scope="col" className={`${head} text-right w-28`}>
@@ -100,7 +125,9 @@ export function OrdersTable({
               </th>
               <td className={`${cell} px-4 py-3 whitespace-nowrap`}>
                 <div className="h-12 flex flex-col justify-center">
-                  <div className="leading-5 whitespace-nowrap">{order.placedDate}</div>
+                  <div className="leading-5 whitespace-nowrap">
+                    {order.placedDate}
+                  </div>
                   <div className="text-[11px] text-muted">
                     {order.placedTime}
                   </div>
@@ -129,7 +156,13 @@ export function OrdersTable({
               </td>
               <td className={`${cell} px-4 py-3 text-right`}>
                 <span className="h-12 flex items-center justify-end">
-                  <StatusPill status={order.status} />
+                  <StatusPill
+                    status={
+                      isProcessing(order, processing)
+                        ? "Processing"
+                        : order.status
+                    }
+                  />
                 </span>
               </td>
               {renderAction && (

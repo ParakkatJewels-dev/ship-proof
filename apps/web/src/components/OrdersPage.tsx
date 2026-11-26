@@ -16,7 +16,8 @@ import type { OrderRecord } from "../lib/orders";
 import { matchesQuery } from "../lib/useOrders";
 import { useAppData } from "./AppData";
 import { AppShell, PageHeader } from "./AppShell";
-import { Card, OrdersTable } from "./ui";
+import { Card, OrdersTable, isProcessing, processingOrderNumbers } from "./ui";
+import { useUploads } from "./UploadsMenu";
 import { SavedVideoModal } from "./SavedVideoModal";
 import { VideoPropertiesModal } from "./VideoPropertiesModal";
 import { ShareVideoModal } from "./ShareVideoModal";
@@ -78,6 +79,8 @@ export function OrdersPage() {
     lookUp,
   } = ordersData;
   const busy = packing.session.status !== "idle";
+  const { items: uploads } = useUploads();
+  const processing = processingOrderNumbers(uploads);
   const [propertiesOf, setPropertiesOf] = useState<OrderRecord | null>(null);
   const [sharing, setSharing] = useState<OrderRecord | null>(null);
   const [saved, setSaved] = useState<{
@@ -115,6 +118,18 @@ export function OrdersPage() {
           />
           {text}
         </span>
+      );
+    }
+    // Saved, but the video is still being compressed or uploaded: nothing to view, trim or share yet.
+    if (isProcessing(order, processing)) {
+      return (
+        <Link
+          href="/uploads"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-muted hover:text-ink"
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
+          Uploading…
+        </Link>
       );
     }
     if (order.status === "Packed") {
@@ -396,6 +411,7 @@ export function OrdersPage() {
                 orders={shownOrders}
                 renderAction={renderAction}
                 highlightId={focusId}
+                processing={processing}
               />
             </div>
           )}

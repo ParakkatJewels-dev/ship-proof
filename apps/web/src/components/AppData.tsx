@@ -60,6 +60,8 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
     deviceRecording: device.connected?.recording ?? null,
     deviceReview: device.connected?.review ?? null,
     onStatusChange: orders.updateStatus,
+    onUploadExpected: device.expectUpload,
+    onUploadCancelled: device.forgetUpload,
   });
   const [modalOpen, setModalOpen] = useState(false);
   // A scan is handled one at a time: further scans are ignored until it finishes.

@@ -58,6 +58,8 @@ export function usePacking({
   deviceRecording,
   deviceReview,
   onStatusChange,
+  onUploadExpected,
+  onUploadCancelled,
 }: {
   stationId: string | null;
   packerId: string;
@@ -65,6 +67,10 @@ export function usePacking({
   deviceRecording: DeviceRecording | null;
   deviceReview: DeviceReview | null;
   onStatusChange: (orderId: string, status: OrderRecord["status"]) => void;
+  /** A video is about to be saved and uploaded: show it in the uploads list at once. */
+  onUploadExpected?: (sessionId: string, orderNumber: string) => void;
+  /** The save announced by onUploadExpected did not happen. */
+  onUploadCancelled?: (sessionId: string) => void;
 }) {
   const [local, setLocal] = useState<PackingSession>({ status: "idle" });
   const [endedSessionId, setEndedSessionId] = useState<string | null>(null);
@@ -86,6 +92,20 @@ export function usePacking({
   useEffect(() => {
     statusCallback.current = onStatusChange;
   }, [onStatusChange]);
+  const uploadCallbacks = useRef({ onUploadExpected, onUploadCancelled });
+  useEffect(() => {
+    uploadCallbacks.current = { onUploadExpected, onUploadCancelled };
+  });
+  const expectUpload = (s: PackingSession) => {
+    if (s.sessionId)
+      uploadCallbacks.current.onUploadExpected?.(
+        s.sessionId,
+        s.orderNumber ?? "",
+      );
+  };
+  const cancelUpload = (s: PackingSession) => {
+    if (s.sessionId) uploadCallbacks.current.onUploadCancelled?.(s.sessionId);
+  };
 
   // What to show: this page's own session, or the device's report when this page doesn't know of one.
   let session: PackingSession = local;
@@ -243,6 +263,7 @@ export function usePacking({
       return true;
     } catch (err) {
       retakeRef.current = null;
+      if (autoSaveRef.current) cancelUpload(current);
       autoSaveRef.current = false;
       setFinishing(false);
       setLocal({ ...current, status: "recording", offline: true });
@@ -288,6 +309,7 @@ export function usePacking({
     if (session.status !== "review") return;
     const current = session;
     setLocal({ ...current, status: "saving" });
+    expectUpload(current);
     try {
       await reviewRequest("save", trim);
       setFinishing(false);
@@ -299,6 +321,7 @@ export function usePacking({
         text: `Video for ${current.orderNumber} saved and uploading.`,
       });
     } catch (err) {
+      cancelUpload(current);
       setFinishing(false);
       setLocal({ ...current, status: "review" });
       setMessage({
@@ -381,6 +404,8 @@ export function usePacking({
     if (session.status !== "recording") return;
     autoSaveRef.current = true;
     setFinishing(true);
+    // The video goes straight to upload, so show it in the uploads list from this moment.
+    expectUpload(session);
     stop();
   };
   const saveReviewRef = useRef(saveReview);
