@@ -24,9 +24,13 @@ export class ShopifyWebhookController {
 
     try {
       // Re-read through GraphQL so delivery status comes from the order's fulfillments,
-      // instead of resetting it from the webhook payload.
-      const order = await shopifyClient.getOrder(orderName);
-      if (order) {
+      // instead of resetting it from the webhook payload. By ID, not by number: a search by number
+      // can come back empty for a few seconds after the order is created.
+      const id: string | undefined = payload?.admin_graphql_api_id;
+      const order = (id ? await shopifyClient.getOrderById(id) : null) ?? (await shopifyClient.getOrder(orderName));
+      if (!order) {
+        logger.warn(`Shopify webhook for ${orderName}: order not found in Shopify, not saved.`);
+      } else {
         await orderService.saveOrder(order);
         if (opts.isNew) await announceOrdersChanged();
       }

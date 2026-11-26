@@ -45,6 +45,14 @@ const ORDERS_QUERY = `
   }
 `;
 
+// One order by its ID. Unlike a search, this sees an order the moment it exists: Shopify's search index
+// lags a few seconds behind a new order, which made the order-created webhook miss orders.
+const ORDER_BY_ID_QUERY = `
+  query ShipProofOrder($id: ID!) {
+    order(id: $id) { ${ORDER_FIELDS} }
+  }
+`;
+
 const SHOP_QUERY = `
   query ShipProofShop {
     shop { name myshopifyDomain currencyCode }
@@ -319,6 +327,17 @@ export class ShopifyClient {
       }
     }
     return result.data?.orders.nodes || [];
+  }
+
+  /** Looks up one order by its Shopify ID (gid://shopify/Order/...), without going through search. */
+  async getOrderById(id: string): Promise<Order | null> {
+    if (this.isMock) return null;
+    const result = await this.graphql<{ order: ShopifyOrderNode | null }>(ORDER_BY_ID_QUERY, { id });
+    const node = this.unwrapOrders({
+      errors: result.errors,
+      data: result.data ? { orders: { nodes: result.data.order ? [result.data.order] : [] } } : undefined,
+    } as GraphQLResult<{ orders: { nodes: ShopifyOrderNode[] } }>)[0];
+    return node ? mapShopifyOrder(node) : null;
   }
 
   /** Looks up one order by its order number, e.g. "#19394" or "19394". */
