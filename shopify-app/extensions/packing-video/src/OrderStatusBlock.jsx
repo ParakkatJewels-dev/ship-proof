@@ -12,7 +12,7 @@ import { useEffect, useState } from "preact/hooks";
 const QUERY = `
   query ShipProofPacking($id: ID!) {
     order(id: $id) {
-      status: metafield(namespace: "shipproof", key: "packing_status") { value }
+      packedAt: metafield(namespace: "shipproof", key: "packed_at") { value }
       video: metafield(namespace: "shipproof", key: "packing_video_url") { value }
     }
   }
@@ -39,7 +39,7 @@ function PackingVideoBlock() {
         const { data } = await res.json();
         if (!cancelled) {
           setPacking({
-            packed: data?.order?.status?.value === "packed",
+            packed: !!data?.order?.packedAt?.value,
             url: data?.order?.video?.value ?? null,
           });
         }

@@ -34,7 +34,6 @@ const ORDER_FIELDS = `
     }
   }
   fulfillments(first: 10) { displayStatus deliveredAt }
-  packingStatus: metafield(namespace: "shipproof", key: "packing_status") { value }
   packedAtMeta: metafield(namespace: "shipproof", key: "packed_at") { value }
 `;
 
@@ -85,7 +84,6 @@ const METAFIELD_DEFINITION_CREATE = `
  * definition allows customer account access, so these definitions are created once with that access.
  */
 export const PACKING_METAFIELDS = [
-  { key: "packing_status", name: "ShipProof packing status", type: "single_line_text_field" },
   { key: "packed_at", name: "ShipProof packed at", type: "date_time" },
   { key: "packing_video_url", name: "ShipProof packing video link", type: "url" },
 ] as const;
@@ -132,7 +130,6 @@ interface ShopifyOrderNode {
     }[];
   };
   fulfillments: { displayStatus?: string | null; deliveredAt?: string | null }[];
-  packingStatus?: { value: string } | null;
   packedAtMeta?: { value: string } | null;
   tags?: string[];
 }
@@ -195,7 +192,7 @@ export function mapShopifyOrder(node: ShopifyOrderNode): Order {
     // survives a restart even when no database is connected.
     // Shopify does not say when the tag was added; the last update of the order is the closest it gives.
     returnedAt: returned ? node.updatedAt : null,
-    packedAt: node.packingStatus?.value === "packed" ? node.packedAtMeta?.value || node.updatedAt : null,
+    packedAt: node.packedAtMeta?.value || null,
     createdAt: node.createdAt,
     updatedAt: node.updatedAt,
     items,
@@ -365,8 +362,9 @@ export class ShopifyClient {
   }
 
   /**
-   * Marks the order as packed and stores the link to its packing video, as metafields on the order:
-   * shipproof.packing_status, shipproof.packed_at and shipproof.packing_video_url.
+   * Records when the order was packed and the link to its packing video, as metafields on the order:
+   * shipproof.packed_at and shipproof.packing_video_url. (No separate status field: packed_at being set
+   * is what marks the order as packed.)
    * Returns false (after logging why) when Shopify refused or could not be reached, so the caller retries.
    */
   async setPackingProof(orderId: string, proof: { watchUrl: string; packedAt: string }): Promise<boolean> {
@@ -381,7 +379,6 @@ export class ShopifyClient {
         metafieldsSet: { userErrors: { field: string[]; message: string }[] };
       }>(METAFIELDS_SET, {
         metafields: [
-          { ownerId: owner, namespace: "shipproof", key: "packing_status", type: "single_line_text_field", value: "packed" },
           { ownerId: owner, namespace: "shipproof", key: "packed_at", type: "date_time", value: proof.packedAt },
           { ownerId: owner, namespace: "shipproof", key: "packing_video_url", type: "url", value: proof.watchUrl },
         ],
