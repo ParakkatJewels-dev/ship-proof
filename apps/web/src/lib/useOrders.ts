@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DEMO_ORDERS, type OrderRecord } from "./orders";
 import { fetchOrders, fetchShopifyStatus, searchOrder } from "./shipproofApi";
+import { onOrdersChanged } from "./liveOrders";
+import { showToast } from "./alerts";
 
 export interface ShopifyConnection {
   state: "loading" | "live" | "demo";
@@ -79,6 +81,42 @@ export function useOrders(limit = 50) {
       cancelled = true;
     };
   }, [limit]);
+
+  // When Shopify sends a new order, the server signals every open dashboard and the list reloads once.
+  // No timer: nothing is fetched until an order actually arrives.
+  const live = shopify.state === "live";
+  const ordersRef = useRef(orders);
+  useEffect(() => {
+    ordersRef.current = orders;
+  });
+  useEffect(() => {
+    if (!live) return;
+    let cancelled = false;
+    const reload = async () => {
+      try {
+        const fresh = await fetchOrders(limit);
+        if (cancelled) return;
+        const known = new Set(ordersRef.current.map((o) => o.id));
+        const added = fresh.filter((o) => !known.has(o.id));
+        setOrders(fresh);
+        if (added.length)
+          void showToast(
+            "ok",
+            added.length === 1
+              ? `${added[0].orderNumber} from ${added[0].customerName}`
+              : `${added.length} new orders`,
+            "New order",
+          );
+      } catch {
+        // Missed this one; the next signal or page load brings it in.
+      }
+    };
+    const stop = onOrdersChanged(() => void reload());
+    return () => {
+      cancelled = true;
+      stop();
+    };
+  }, [live, limit]);
 
   /** Asks Shopify for an order number that isn't in the list. Returns it (and adds it) when found. */
   const lookUp = async (query: string): Promise<OrderRecord | null> => {

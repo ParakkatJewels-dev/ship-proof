@@ -4,29 +4,36 @@ import { shopifyClient } from "../../integrations/shopify/shopify.client.js";
 import { DeliveryStatus } from "@shipproof/shared";
 import { logger } from "../../utils/logger.js";
 import { sendSuccess } from "../../utils/response.js";
+import { announceOrdersChanged } from "../../integrations/supabase/realtime.js";
 
 /**
- * Shopify expects a 2xx within a few seconds, so each handler acknowledges first
- * and then does its work. Failures are logged; Shopify does not need to retry them.
+ * Shopify expects a 2xx within a few seconds. The order handler does its work (about a second) before
+ * answering, because on serverless hosting work started after the answer may be cut off. Failures are
+ * logged and still answered with 2xx; Shopify does not need to retry them.
  */
 export class ShopifyWebhookController {
-  /** orders/create and orders/updated */
-  async handleOrderCreated(req: Request, res: Response) {
+  /**
+   * orders/create and orders/updated. A new order is also announced to open dashboards, which then
+   * reload their order list (no polling).
+   */
+  async handleOrderCreated(req: Request, res: Response, opts: { isNew: boolean } = { isNew: false }) {
     const payload = req.body;
-    sendSuccess(res, { received: true });
-
     const orderName: string | undefined = payload?.name;
-    if (!orderName) return;
+    if (!orderName) return sendSuccess(res, { received: true });
     logger.info(`Shopify webhook ${req.headers["x-shopify-topic"] || "orders"}: ${orderName}`);
 
     try {
       // Re-read through GraphQL so delivery status comes from the order's fulfillments,
       // instead of resetting it from the webhook payload.
       const order = await shopifyClient.getOrder(orderName);
-      if (order) await orderService.saveOrder(order);
+      if (order) {
+        await orderService.saveOrder(order);
+        if (opts.isNew) await announceOrdersChanged();
+      }
     } catch (err: any) {
       logger.error(`Failed to sync order ${orderName} from webhook:`, err.message);
     }
+    return sendSuccess(res, { received: true });
   }
 
   /** fulfillments/update: starts the retention countdown (30 days) once a shipment is delivered. */
