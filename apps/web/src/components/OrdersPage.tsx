@@ -381,11 +381,13 @@ export function OrdersPage() {
             !searching &&
             !searchMessage && (
               <p className="text-sm text-muted py-10 text-center">
-                {searchQuery.trim()
-                  ? `No orders match "${searchQuery.trim()}".${shopify.state === "live" ? " Press Enter to look it up in Shopify." : ""}`
-                  : filter === "All"
-                    ? "No orders yet."
-                    : `No ${filter.toLowerCase()} orders.`}
+                {shopify.state === "loading"
+                  ? "Loading orders…"
+                  : searchQuery.trim()
+                    ? `No orders match "${searchQuery.trim()}".${shopify.state === "live" ? " Press Enter to look it up in Shopify." : ""}`
+                    : filter === "All"
+                      ? "No orders yet."
+                      : `No ${filter.toLowerCase()} orders.`}
               </p>
             )
           ) : (

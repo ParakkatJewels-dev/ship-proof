@@ -14,7 +14,9 @@ export interface ShopifyConnection {
  * connected, demo orders otherwise. `lookUp` finds an order that isn't in the loaded list.
  */
 export function useOrders(limit = 50) {
-  const [orders, setOrders] = useState<OrderRecord[]>(DEMO_ORDERS);
+  // Empty until the API says what to show: the store's orders, or (local demo mode only) the demo orders.
+  // Starting with the demo list made it flash on every page load of the live site.
+  const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [shopify, setShopify] = useState<ShopifyConnection>({
     state: "loading",
     label: "Connecting to Shopify…",
@@ -33,25 +35,25 @@ export function useOrders(limit = 50) {
             state: "demo",
             label: "Demo data · Shopify not connected",
           });
-          // The demo orders live in the browser, but an order packed during a test is saved in the database.
+          // The demo orders live in the browser, but an order packed during a test is saved by the API.
           // Show those as Packed, so the status survives a reload just as it will with a real store.
+          let packed = new Set<string>();
           try {
             const saved = await fetchOrders(limit);
-            const packed = new Set(
+            packed = new Set(
               saved
                 .filter((o) => o.status === "Packed")
                 .map((o) => o.orderNumber),
             );
-            if (!cancelled && packed.size) {
-              setOrders((prev) =>
-                prev.map((o) =>
-                  packed.has(o.orderNumber) ? { ...o, status: "Packed" } : o,
-                ),
-              );
-            }
           } catch {
-            // The API may be unreachable; the plain demo list is fine.
+            // Could not read the saved state; show the plain demo list.
           }
+          if (!cancelled)
+            setOrders(
+              DEMO_ORDERS.map((o) =>
+                packed.has(o.orderNumber) ? { ...o, status: "Packed" } : o,
+              ),
+            );
           return;
         }
         const live = await fetchOrders(limit);
@@ -65,8 +67,12 @@ export function useOrders(limit = 50) {
         });
         setOrders(live);
       } catch {
+        // No made-up orders here: on the live site that would look like real data.
         if (!cancelled)
-          setShopify({ state: "demo", label: "Demo data · API not reachable" });
+          setShopify({
+            state: "demo",
+            label: "Orders unavailable · ShipProof server not reachable",
+          });
       }
     })();
     return () => {

@@ -316,9 +316,11 @@ export function VmsDashboard() {
             !searching &&
             !searchMessage && (
               <p className="text-sm text-muted py-6">
-                {searchActive
-                  ? `No orders match.${shopify.state === "live" ? " Press Enter to look it up in Shopify." : ""}`
-                  : "No pending orders. Everything has been packed."}
+                {shopify.state === "loading"
+                  ? "Loading orders…"
+                  : searchActive
+                    ? `No orders match.${shopify.state === "live" ? " Press Enter to look it up in Shopify." : ""}`
+                    : "No pending orders. Everything has been packed."}
               </p>
             )
           ) : (
