@@ -12,7 +12,6 @@ import { useEffect, useState } from "preact/hooks";
 const QUERY = `
   query ShipProofPacking($id: ID!) {
     order(id: $id) {
-      packedAt: metafield(namespace: "shipproof", key: "packed_at") { value }
       video: metafield(namespace: "shipproof", key: "packing_video_url") { value }
     }
   }
@@ -39,7 +38,6 @@ function PackingVideoBlock() {
         const { data } = await res.json();
         if (!cancelled) {
           setPacking({
-            packed: !!data?.order?.packedAt?.value,
             url: data?.order?.video?.value ?? null,
           });
         }
@@ -53,8 +51,8 @@ function PackingVideoBlock() {
     };
   }, [orderId]);
 
-  // Not packed by ShipProof, or the video has been removed: show nothing at all.
-  if (!packing?.packed || !packing.url) return null;
+  // No ShipProof video on this order (not packed yet, or the video has been removed): show nothing at all.
+  if (!packing?.url) return null;
 
   return (
     <s-section>

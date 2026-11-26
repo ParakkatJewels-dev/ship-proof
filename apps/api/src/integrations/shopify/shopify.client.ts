@@ -34,7 +34,7 @@ const ORDER_FIELDS = `
     }
   }
   fulfillments(first: 10) { displayStatus deliveredAt }
-  packedAtMeta: metafield(namespace: "shipproof", key: "packed_at") { value }
+  packingVideo: metafield(namespace: "shipproof", key: "packing_video_url") { value }
 `;
 
 const ORDERS_QUERY = `
@@ -84,7 +84,6 @@ const METAFIELD_DEFINITION_CREATE = `
  * definition allows customer account access, so these definitions are created once with that access.
  */
 export const PACKING_METAFIELDS = [
-  { key: "packed_at", name: "ShipProof packed at", type: "date_time" },
   { key: "packing_video_url", name: "ShipProof packing video link", type: "url" },
 ] as const;
 
@@ -130,7 +129,7 @@ interface ShopifyOrderNode {
     }[];
   };
   fulfillments: { displayStatus?: string | null; deliveredAt?: string | null }[];
-  packedAtMeta?: { value: string } | null;
+  packingVideo?: { value: string } | null;
   tags?: string[];
 }
 
@@ -192,7 +191,9 @@ export function mapShopifyOrder(node: ShopifyOrderNode): Order {
     // survives a restart even when no database is connected.
     // Shopify does not say when the tag was added; the last update of the order is the closest it gives.
     returnedAt: returned ? node.updatedAt : null,
-    packedAt: node.packedAtMeta?.value || null,
+    // An order carrying a ShipProof video link was packed. Shopify does not keep the packing time, so the
+    // last update of the order stands in; it is only used when ShipProof's own database has no packed time.
+    packedAt: node.packingVideo?.value ? node.updatedAt : null,
     createdAt: node.createdAt,
     updatedAt: node.updatedAt,
     items,
@@ -362,12 +363,11 @@ export class ShopifyClient {
   }
 
   /**
-   * Records when the order was packed and the link to its packing video, as metafields on the order:
-   * shipproof.packed_at and shipproof.packing_video_url. (No separate status field: packed_at being set
-   * is what marks the order as packed.)
+   * Stores the link to the order's packing video as the order metafield shipproof.packing_video_url. That is
+   * the only thing ShipProof writes to Shopify: the packed status and time are kept in ShipProof itself.
    * Returns false (after logging why) when Shopify refused or could not be reached, so the caller retries.
    */
-  async setPackingProof(orderId: string, proof: { watchUrl: string; packedAt: string }): Promise<boolean> {
+  async setPackingProof(orderId: string, proof: { watchUrl: string }): Promise<boolean> {
     if (this.isMock) {
       logger.info(`[Mock Shopify] Order ${orderId} marked packed. Video link: ${proof.watchUrl}`);
       return true;
@@ -379,7 +379,6 @@ export class ShopifyClient {
         metafieldsSet: { userErrors: { field: string[]; message: string }[] };
       }>(METAFIELDS_SET, {
         metafields: [
-          { ownerId: owner, namespace: "shipproof", key: "packed_at", type: "date_time", value: proof.packedAt },
           { ownerId: owner, namespace: "shipproof", key: "packing_video_url", type: "url", value: proof.watchUrl },
         ],
       });

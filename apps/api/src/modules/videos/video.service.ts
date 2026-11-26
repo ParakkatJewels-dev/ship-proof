@@ -179,7 +179,7 @@ export class VideoService {
 
     await this.removeReplacedVideos(orderId, video.id);
     await orderService.markPacked(orderId, now);
-    await this.publishToShopify({ ...video, watchTokenHash: hash }, token, now);
+    await this.publishToShopify({ ...video, watchTokenHash: hash }, token);
 
     return toSummary((await repo.findBySession(sessionId)) ?? video);
   }
@@ -192,15 +192,15 @@ export class VideoService {
     }
   }
 
-  /** Writes the packed status and the watch link to the Shopify order. If that fails, the retry job tries again. */
-  private async publishToShopify(video: StoredVideo, token: string, packedAt: string) {
+  /** Writes the watch link to the Shopify order. If that fails, the retry job tries again. */
+  private async publishToShopify(video: StoredVideo, token: string) {
     try {
       const identity = await orderService.resolveIdentity(video.orderId);
       if (!identity) {
         logger.error(`Cannot tell Shopify about the video: order ${video.orderId} is unknown.`);
         return;
       }
-      const ok = await shopifyClient.setPackingProof(identity.shopifyOrderId, { watchUrl: watchUrl(token), packedAt });
+      const ok = await shopifyClient.setPackingProof(identity.shopifyOrderId, { watchUrl: watchUrl(token) });
       if (ok) await repo.update(video.id, { shopifySyncedAt: new Date().toISOString() });
     } catch (err: any) {
       logger.error(`Shopify update for video ${video.id} failed; it will be retried:`, err.message);
@@ -216,7 +216,7 @@ export class VideoService {
     for (const video of await repo.listUnsynced(limit)) {
       const { token, hash } = createWatchToken();
       await repo.update(video.id, { watchTokenHash: hash });
-      await this.publishToShopify({ ...video, watchTokenHash: hash }, token, video.updatedAt);
+      await this.publishToShopify({ ...video, watchTokenHash: hash }, token);
       if ((await repo.findBySession(video.sessionId))?.shopifySyncedAt) done++;
     }
     // Links to videos that were deleted but could not be removed from Shopify yet.

@@ -44,7 +44,7 @@ The web app and API each need a public **https** address, for example `proof.you
    `SHOPIFY_CLIENT_SECRET` in the API environment.
 2. Run `npm run shopify:check` in `apps/api`. Check: it prints the shop name and a few recent orders.
 3. Run `npm run shopify:definitions`. This creates the three order fields ShipProof writes
-   (`packed_at`, `packing_video_url`) with customer account read access, which the customer
+   (`packing_video_url`) with customer account read access, which the customer
    page needs.
 4. After the API has a public address, set `API_PUBLIC_URL` and run `npm run shopify:webhooks`. This registers
    the order and shipment webhooks. Check: the three subscriptions appear in the Dev Dashboard.
