@@ -29,8 +29,8 @@ export function PackingPage() {
   const { session } = packing;
   const order = orders.orders.find((o) => o.id === session.orderId);
 
-  // Leave for the Orders page once the recording has been saved (or cancelled: then the Pending tab,
-  // where the order is waiting to be started again). A retake never goes idle in between.
+  // Leave for the Orders page (All tab) once the recording has been saved or cancelled. After a cancel it
+  // opens on the order, highlighted, ready to start again. A retake never goes idle in between.
   // The order that was cancelled, so the Orders page can open on it and highlight it.
   const cancelled = useRef<string | null>(null);
   const previous = useRef(session.status);
@@ -38,7 +38,7 @@ export function PackingPage() {
     if (previous.current !== "idle" && session.status === "idle")
       router.push(
         cancelled.current
-          ? `/orders?status=pending&focus=${encodeURIComponent(cancelled.current)}`
+          ? `/orders?focus=${encodeURIComponent(cancelled.current)}`
           : "/orders",
       );
     previous.current = session.status;
