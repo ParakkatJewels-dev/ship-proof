@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { Check, Copy, ExternalLink, Share2, X } from "lucide-react";
+import { Check, Copy, ExternalLink, X } from "lucide-react";
 import type { OrderRecord } from "../lib/orders";
 import { createShareLink, type ShareLink } from "../lib/shipproofApi";
 
@@ -16,7 +16,7 @@ function formatDate(iso: string) {
 
 /**
  * Makes a link to an order's packing video that opens in any browser, without signing in, and offers
- * ways to pass it on: copy, open, WhatsApp, or the device's own share sheet.
+ * ways to pass it on: copy, open or WhatsApp.
  */
 export function ShareVideoModal({
   order,
@@ -54,8 +54,6 @@ export function ShareVideoModal({
   const message = link
     ? `Packing video for order ${order.orderNumber}: ${link.url}`
     : "";
-  const canShareNatively =
-    typeof navigator !== "undefined" && typeof navigator.share === "function";
 
   const copy = async () => {
     if (!link) return;
@@ -68,19 +66,6 @@ export function ShareVideoModal({
     }
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const shareNatively = async () => {
-    if (!link) return;
-    try {
-      await navigator.share({
-        title: `Packing video ${order.orderNumber}`,
-        text: `Packing video for order ${order.orderNumber}`,
-        url: link.url,
-      });
-    } catch {
-      // Closed without sharing.
-    }
   };
 
   const button =
@@ -174,16 +159,6 @@ export function ShareVideoModal({
                 >
                   WhatsApp
                 </a>
-                {canShareNatively && (
-                  <button
-                    type="button"
-                    onClick={shareNatively}
-                    className={`${button} col-span-2 border border-[#D9DCE6] text-ink hover:bg-canvas`}
-                  >
-                    <Share2 className="w-4 h-4" />
-                    More ways to share
-                  </button>
-                )}
               </div>
             </>
           )}
