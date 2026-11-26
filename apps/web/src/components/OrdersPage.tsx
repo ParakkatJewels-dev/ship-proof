@@ -18,9 +18,22 @@ import { useAppData } from "./AppData";
 import { AppShell, PageHeader } from "./AppShell";
 import { Card, OrdersTable, isProcessing, processingOrderNumbers } from "./ui";
 import { useUploads } from "./UploadsMenu";
-import { SavedVideoModal } from "./SavedVideoModal";
-import { VideoPropertiesModal } from "./VideoPropertiesModal";
-import { ShareVideoModal } from "./ShareVideoModal";
+import dynamic from "next/dynamic";
+
+// The video windows (player, trimmer, properties, share) load only when one is opened from a row's
+// menu, so the Orders page itself stays small and no video code or video is fetched up front.
+const SavedVideoModal = dynamic(
+  () => import("./SavedVideoModal").then((m) => m.SavedVideoModal),
+  { ssr: false },
+);
+const VideoPropertiesModal = dynamic(
+  () => import("./VideoPropertiesModal").then((m) => m.VideoPropertiesModal),
+  { ssr: false },
+);
+const ShareVideoModal = dynamic(
+  () => import("./ShareVideoModal").then((m) => m.ShareVideoModal),
+  { ssr: false },
+);
 import { fetchVideoDownload } from "../lib/shipproofApi";
 import { RowMenu } from "./RowMenu";
 import { Pagination } from "./Pagination";

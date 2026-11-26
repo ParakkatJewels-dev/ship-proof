@@ -1,8 +1,25 @@
-import Swal from "sweetalert2";
+import type SwalType from "sweetalert2";
 import type { StartIssue } from "./startIssues";
 import { pushToast } from "./toasts";
 
 const BLUE = "#3654D6";
+
+// The alert library is loaded on first use, not with every page. It is also fetched quietly a few seconds
+// after the page opens, so the first alert still appears at once. Until it has loaded no alert can be on
+// screen, which is what closeAlert and isAlertOpen report.
+let swal: typeof SwalType | null = null;
+let loading: Promise<typeof SwalType> | null = null;
+/** Counts closeAlert calls, so an alert asked for and closed while the library was loading never pops up late. */
+let closes = 0;
+const loadSwal = async () => {
+  if (swal) return swal;
+  const asked = closes;
+  const lib = await (loading ??= import("sweetalert2").then(
+    (m) => (swal = m.default),
+  ));
+  return closes === asked ? lib : null;
+};
+if (typeof window !== "undefined") setTimeout(() => void loadSwal(), 3000);
 
 const escapeHtml = (s: string) =>
   s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
@@ -18,6 +35,8 @@ export async function showStartProblem(
   const steps = issue.steps
     .map((s, i) => `<li><b>${i + 1}.</b> ${escapeHtml(s)}</li>`)
     .join("");
+  const Swal = await loadSwal();
+  if (!Swal) return false;
   const result = await Swal.fire({
     icon: "warning",
     title: issue.title,
@@ -55,17 +74,21 @@ export function showToast(tone: "ok" | "error", text: string, title?: string) {
     pushToast("ok", text);
     return Promise.resolve();
   }
-  return Swal.fire({
-    icon: "error",
-    title: title ?? "Something went wrong",
-    text,
-    confirmButtonText: "OK",
-    confirmButtonColor: BLUE,
-  });
+  return loadSwal().then((Swal) =>
+    Swal?.fire({
+      icon: "error",
+      title: title ?? "Something went wrong",
+      text,
+      confirmButtonText: "OK",
+      confirmButtonColor: BLUE,
+    }),
+  );
 }
 
 /** A "starting" dialog shown until the camera confirms recording (it is then closed or replaced). */
-export function showStartingCamera() {
+export async function showStartingCamera() {
+  const Swal = await loadSwal();
+  if (!Swal) return;
   return Swal.fire({
     title: "Starting the camera…",
     text: "Waiting for the camera to confirm it is recording.",
@@ -76,10 +99,13 @@ export function showStartingCamera() {
   });
 }
 
-export const closeAlert = () => Swal.close();
+export const closeAlert = () => {
+  closes++;
+  swal?.close();
+};
 
 /** True while any alert box is on the screen. */
-export const isAlertOpen = () => Swal.isVisible();
+export const isAlertOpen = () => !!swal?.isVisible();
 
 let cameraAlertOpen = false;
 
@@ -102,11 +128,13 @@ export async function showCameraProblem(
 
 /** Closes the camera alert if it is the one on the screen. */
 export function closeCameraProblem() {
-  if (cameraAlertOpen && Swal.isVisible()) Swal.close();
+  if (cameraAlertOpen && swal?.isVisible()) swal.close();
 }
 
 /** Asks before a saved video is replaced by a new recording. Resolves to true when the packer agrees. */
 export async function confirmRetake(orderNumber: string): Promise<boolean> {
+  const Swal = await loadSwal();
+  if (!Swal) return false;
   const result = await Swal.fire({
     icon: "question",
     title: `Retake ${orderNumber}?`,
@@ -122,6 +150,8 @@ export async function confirmRetake(orderNumber: string): Promise<boolean> {
 
 /** Asks before signing out. Resolves to true when the person agrees. */
 export async function confirmSignOut(): Promise<boolean> {
+  const Swal = await loadSwal();
+  if (!Swal) return false;
   const result = await Swal.fire({
     icon: "question",
     title: "Sign out?",

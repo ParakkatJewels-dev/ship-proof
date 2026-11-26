@@ -12,7 +12,13 @@ import { useActiveDevice } from "../lib/useActiveDevice";
 import { useOrders } from "../lib/useOrders";
 import type { OrderRecord } from "../lib/orders";
 import { usePacking } from "../lib/usePacking";
-import { StartPackingModal } from "./StartPackingModal";
+import dynamic from "next/dynamic";
+
+// Loaded the first time "Start packing" is opened, not with every page.
+const StartPackingModal = dynamic(
+  () => import("./StartPackingModal").then((m) => m.StartPackingModal),
+  { ssr: false },
+);
 import {
   closeAlert,
   closeCameraProblem,
