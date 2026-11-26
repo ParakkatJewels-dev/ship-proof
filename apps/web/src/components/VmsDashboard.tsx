@@ -5,23 +5,16 @@ import Link from "next/link";
 import {
   Camera,
   ChevronRight,
-  Clapperboard,
   Hourglass,
   PackageCheck,
+  Timer,
 } from "lucide-react";
 import type { ActiveDevice } from "../lib/shipproofApi";
 import { matchesQuery } from "../lib/useOrders";
+import { formatAverage, usePackedToday } from "../lib/usePackedToday";
 import { useAppData } from "./AppData";
 import { AppShell, PageHeader } from "./AppShell";
 import { Card, OrdersTable } from "./ui";
-
-/* ------------------------------------------------------------------------- */
-/* Demo metrics. Replace with API data once the dashboard is wired up.       */
-/* ------------------------------------------------------------------------- */
-
-const DEMO_METRICS = {
-  videosStored: 1284,
-};
 
 /** The Pending Orders card shows this many orders; the rest are a click away on the Orders page. */
 const DASHBOARD_ORDER_LIMIT = 5;
@@ -154,6 +147,7 @@ export function VmsDashboard() {
     (o) => o.status === "Packed" || o.status === "Dispatched",
   ).length;
   const pendingCount = pendingOrders.length;
+  const packedToday = usePackedToday();
 
   return (
     <AppShell>
@@ -177,8 +171,10 @@ export function VmsDashboard() {
             <PackageCheck className="w-5 h-5" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm text-ink/80">Packed orders</p>
-            <p className="text-2xl font-bold mt-0.5">{packedCount}</p>
+            <p className="text-sm text-ink/80">Packed today</p>
+            <p className="text-2xl font-bold mt-0.5">
+              {packedToday ? packedToday.count : packedCount}
+            </p>
           </div>
         </Card>
 
@@ -196,12 +192,14 @@ export function VmsDashboard() {
 
         <Card className="flex items-center gap-3 py-5! sm:col-span-2 xl:col-span-4">
           <div className="w-12 h-12 rounded-full bg-accent-pale text-accent-dark flex items-center justify-center shrink-0">
-            <Clapperboard className="w-5 h-5" />
+            <Timer className="w-5 h-5" />
           </div>
           <div>
-            <p className="text-sm text-ink/80">Videos stored</p>
+            <p className="text-sm text-ink/80">Average packing time today</p>
             <p className="text-2xl font-bold mt-0.5">
-              {DEMO_METRICS.videosStored.toLocaleString("en-IN")}
+              {packedToday?.averageSeconds != null
+                ? formatAverage(packedToday.averageSeconds)
+                : "—"}
             </p>
           </div>
         </Card>

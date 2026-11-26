@@ -282,8 +282,11 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
   // do. It is shown once per problem: if it is closed it stays closed until the camera has worked again, and
   // it closes by itself as soon as the camera is back. It never replaces another alert box that is on screen,
   // and it stays out of the way while an order is being packed.
-  const cameraIssue =
+  // A lost server connection is not popped up by itself: the status line already says so, and the alert
+  // still appears if someone tries to start recording while the server is away.
+  const detected =
     device.reachable === null ? null : diagnose(device.reachable, device.info);
+  const cameraIssue = detected?.kind === "server" ? null : detected;
   const cameraIssueKind = cameraIssue?.kind ?? null;
   const cameraAlertClosedFor = useRef<string | null>(null);
   const packingIdle = packing.session.status === "idle";

@@ -175,6 +175,16 @@ export async function searchOrder(query: string): Promise<OrderRecord | null> {
   }
 }
 
+/** One saved video in the recent list: just what the dashboard totals need. */
+export interface VideoListItem {
+  status: string;
+  durationSeconds: number;
+  recordedAt: string;
+}
+
+/** The most recent saved videos, newest first. */
+export const fetchVideoList = () => getJson<VideoListItem[]>("/api/videos");
+
 /** What the dashboard may know about an order's stored video. Never includes a storage address. */
 export interface VideoProperties {
   status: string;
