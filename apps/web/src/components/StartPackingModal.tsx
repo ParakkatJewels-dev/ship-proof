@@ -167,9 +167,9 @@ export function StartPackingModal({ onClose }: { onClose: () => void }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {order.items.map((it) => (
+                  {order.items.map((it, n) => (
                     <tr
-                      key={it.id}
+                      key={`${it.id}-${n}`}
                       className="border-b border-canvas last:border-0"
                     >
                       <td className="py-2 pr-4">

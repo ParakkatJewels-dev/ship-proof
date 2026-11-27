@@ -266,8 +266,11 @@ export function PackingPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {order.items.map((it) => (
-                      <tr key={it.id} className="[&:last-child>*]:border-b-0">
+                    {order.items.map((it, n) => (
+                      <tr
+                        key={`${it.id}-${n}`}
+                        className="[&:last-child>*]:border-b-0"
+                      >
                         <td className="px-4 py-2.5 border-b border-r border-[#E1E5EF]">
                           <div className="flex items-center gap-3">
                             <ProductThumb

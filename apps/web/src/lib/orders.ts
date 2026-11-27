@@ -135,7 +135,8 @@ const SERIES_3000_ORDERS: OrderRecord[] = SERIES_3000_CUSTOMERS.map(
     const time = `${((hour + 11) % 12) + 1}:${String(minutes % 60).padStart(2, "0")} ${hour < 12 ? "AM" : "PM"}`;
     const phone = `+91 9${String(8470000000 + number * 7919).slice(0, 4)} ${String(10000 + ((number * 3571) % 90000))}`;
     const first = PRODUCT_KEYS[i % PRODUCT_KEYS.length];
-    const second = PRODUCT_KEYS[(i * 2 + 3) % PRODUCT_KEYS.length];
+    // Three places on from the first, so an order never lists the same product twice.
+    const second = PRODUCT_KEYS[(i + 3) % PRODUCT_KEYS.length];
     const lines: [keyof typeof DEMO_PRODUCTS, number][] =
       i % 3 === 0
         ? [

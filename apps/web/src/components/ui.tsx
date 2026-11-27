@@ -134,9 +134,9 @@ export function OrdersTable({
                 </div>
               </td>
               <td className={`${cell} px-4 py-3`}>
-                {order.items.map((it) => (
+                {order.items.map((it, n) => (
                   <div
-                    key={it.id}
+                    key={`${it.id}-${n}`}
                     className="h-12 flex items-center gap-3 text-ink/90"
                   >
                     <ProductThumb src={it.imageUrl} name={it.name} />
@@ -145,9 +145,9 @@ export function OrdersTable({
                 ))}
               </td>
               <td className={`${cell} px-4 py-3 text-right tabular-nums`}>
-                {order.items.map((it) => (
+                {order.items.map((it, n) => (
                   <div
-                    key={it.id}
+                    key={`${it.id}-${n}`}
                     className="h-12 flex items-center justify-end"
                   >
                     {it.quantity}
