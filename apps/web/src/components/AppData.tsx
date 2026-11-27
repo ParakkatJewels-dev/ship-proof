@@ -300,7 +300,12 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
       scanning.current = false;
     }
   };
-  useBarcodeScanner(handleScan);
+  useBarcodeScanner(handleScan, (reason) =>
+    pushToast(
+      "info",
+      `Scan not recognised: ${reason}. Scan again; if it keeps happening, open /scan-test to check the scanner.`,
+    ),
+  );
 
   // Run the scan that was waiting for the camera.
   const handleScanRef = useRef(handleScan);

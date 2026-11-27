@@ -98,15 +98,33 @@ export function createScanDetector(
   };
 }
 
-/** Listens for a barcode reader anywhere on the page and passes each scanned code to `onScan`. */
-export function useBarcodeScanner(onScan: (code: string) => void) {
-  const latest = useRef(onScan);
+/**
+ * Listens for a barcode reader anywhere on the page and passes each scanned code to `onScan`.
+ * `onRejected` hears why a burst of keys ending in Enter was not taken as a scan (too slow, too short),
+ * so the packer sees a reason instead of nothing happening.
+ */
+export function useBarcodeScanner(
+  onScan: (code: string) => void,
+  onRejected?: (reason: string) => void,
+) {
+  const latest = useRef({ onScan, onRejected });
   useEffect(() => {
-    latest.current = onScan;
+    latest.current = { onScan, onRejected };
   });
 
   useEffect(() => {
-    const onKey = createScanDetector((code) => latest.current(code));
+    const onKey = createScanDetector(
+      (code) => latest.current.onScan(code),
+      (k) => {
+        if (
+          (k.key === "Enter" || k.key === "Tab") &&
+          k.result.kind === "ignored" &&
+          (k.result.reason.startsWith("too short") ||
+            k.result.reason.startsWith("Enter came"))
+        )
+          latest.current.onRejected?.(k.result.reason);
+      },
+    );
     window.addEventListener("keydown", onKey, true);
     return () => window.removeEventListener("keydown", onKey, true);
   }, []);
