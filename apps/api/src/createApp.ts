@@ -1,4 +1,5 @@
 import fs from "fs";
+import path from "path";
 import express from "express";
 import cors from "cors";
 import orderRoutes from "./modules/orders/order.routes.js";
@@ -15,6 +16,7 @@ import { productionProblems } from "./config/productionChecks.js";
 import { logger } from "./utils/logger.js";
 import { isMockSupabase } from "./integrations/supabase/db.client.js";
 import { devStorageRoutes } from "./integrations/supabase/devStorage.js";
+import { DEV_DATA_DIR } from "./utils/devData.js";
 
 export function createApp() {
   const app = express();
@@ -85,6 +87,21 @@ export function createApp() {
   // Local demo mode only: video files on this computer instead of Supabase Storage.
   if (isMockSupabase && config.nodeEnv !== "production") {
     app.use("/dev-storage", devStorageRoutes());
+    // Troubleshooting a barcode scanner: the local dashboard sends the keys it receives, kept in
+    // .dev-data/scan-log.jsonl (last 2,000 lines). Key names and timings only.
+    app.post("/dev-scan-log", (req, res) => {
+      const lines = Array.isArray(req.body?.events) ? req.body.events.slice(0, 500) : [];
+      const file = path.join(DEV_DATA_DIR, "scan-log.jsonl");
+      try {
+        fs.mkdirSync(DEV_DATA_DIR, { recursive: true });
+        const old = fs.existsSync(file) ? fs.readFileSync(file, "utf8").split("\n").filter(Boolean) : [];
+        const next = [...old, ...lines.map((l: unknown) => JSON.stringify(l))].slice(-2000);
+        fs.writeFileSync(file, next.join("\n") + "\n");
+      } catch (err: any) {
+        logger.warn(`Could not write the scan log: ${err.message}`);
+      }
+      res.json({ ok: true });
+    });
     logger.warn("Demo mode: no Supabase configured. Test data and videos are kept in apps/api/.dev-data.");
   }
 

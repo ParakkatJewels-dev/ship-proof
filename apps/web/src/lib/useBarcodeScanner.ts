@@ -113,9 +113,16 @@ export function useBarcodeScanner(
   });
 
   useEffect(() => {
-    const onKey = createScanDetector(
+    const log = devScanLog();
+    const detect = createScanDetector(
       (code) => latest.current.onScan(code),
       (k) => {
+        log?.push({
+          type: "detector",
+          key: k.key,
+          gapMs: k.gapMs,
+          result: k.result,
+        });
         if (
           (k.key === "Enter" || k.key === "Tab") &&
           k.result.kind === "ignored" &&
@@ -125,7 +132,85 @@ export function useBarcodeScanner(
           latest.current.onRejected?.(k.result.reason);
       },
     );
+    const onKey = (e: KeyboardEvent) => {
+      log?.push({
+        type: "keydown",
+        key: e.key,
+        code: e.code,
+        alt: e.altKey,
+        ctrl: e.ctrlKey,
+        shift: e.shiftKey,
+        repeat: e.repeat,
+        target: describeTarget(e.target),
+      });
+      detect(e);
+    };
     window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
+    return () => {
+      window.removeEventListener("keydown", onKey, true);
+      log?.stop();
+    };
   }, []);
+}
+
+const describeTarget = (t: EventTarget | null) => {
+  const el = t as HTMLElement | null;
+  if (!el?.tagName) return String(t);
+  return `${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ""}${(el as HTMLInputElement).type ? `[${(el as HTMLInputElement).type}]` : ""}`;
+};
+
+/**
+ * Local development only: sends the keys this page receives (names and timings, no other data) to the
+ * local API, which keeps them in apps/api/.dev-data/scan-log.jsonl, to troubleshoot a barcode scanner.
+ * Also notes when the tab gains or loses focus. Never active on the live site.
+ */
+function devScanLog() {
+  if (process.env.NODE_ENV !== "development") return null;
+  const api = (
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
+  ).replace(/\/+$/, "");
+  let events: Record<string, unknown>[] = [];
+  const start = performance.now();
+  const push = (e: Record<string, unknown>) =>
+    events.push({
+      at: new Date().toISOString(),
+      ms: Math.round(performance.now() - start),
+      page: location.pathname,
+      ...e,
+    });
+  const flush = () => {
+    if (!events.length) return;
+    const body = JSON.stringify({ events });
+    events = [];
+    void fetch(`${api}/dev-scan-log`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body,
+      keepalive: true,
+    }).catch(() => {});
+  };
+  const onFocus = () =>
+    push({ type: "window-focus", hasFocus: document.hasFocus() });
+  const onBlur = () => push({ type: "window-blur" });
+  const onVisible = () =>
+    push({ type: "visibility", state: document.visibilityState });
+  window.addEventListener("focus", onFocus);
+  window.addEventListener("blur", onBlur);
+  document.addEventListener("visibilitychange", onVisible);
+  push({
+    type: "listening",
+    hasFocus: document.hasFocus(),
+    active: describeTarget(document.activeElement),
+  });
+  const timer = setInterval(flush, 1000);
+  return {
+    push,
+    stop: () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("blur", onBlur);
+      document.removeEventListener("visibilitychange", onVisible);
+      flush();
+    },
+  };
 }
