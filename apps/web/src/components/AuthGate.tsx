@@ -20,8 +20,9 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
   );
   const signedIn = !!raw;
   const onLogin = pathname === "/login";
-  // The customer watch page is public: it never needs a dashboard sign-in.
-  const isPublic = pathname.startsWith("/watch/");
+  // The customer watch page is public: it never needs a dashboard sign-in. So is the scanner check page,
+  // which only shows keys and must never start packing.
+  const isPublic = pathname.startsWith("/watch/") || pathname === "/scan-test";
 
   useEffect(() => {
     if (raw === undefined || isPublic) return;
