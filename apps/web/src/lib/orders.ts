@@ -66,6 +66,7 @@ function pendingDemoOrder(
   customerPhone: string,
   placedTime: string,
   lines: [keyof typeof DEMO_PRODUCTS, number][],
+  placedDate = "25 Nov 2026",
 ): OrderRecord {
   const items = lines.map(([key, quantity]) => ({
     ...DEMO_PRODUCTS[key],
@@ -79,12 +80,72 @@ function pendingDemoOrder(
     customerEmail: `${customerName.toLowerCase().replace(/[^a-z]+/g, ".")}@example.com`,
     itemCount: items.reduce((sum, it) => sum + it.quantity, 0),
     placedTime,
-    placedDate: "25 Nov 2026",
+    placedDate,
     status: "Pending",
     thumbnailUrl: items[0].imageUrl,
     items,
   };
 }
+
+const SERIES_3000_CUSTOMERS = [
+  "Aditya Menon",
+  "Fathima Rahman",
+  "Gokul Krishnan",
+  "Haritha Das",
+  "Irfan Basheer",
+  "Jyothi Pillai",
+  "Kiran Varghese",
+  "Lakshmi Nair",
+  "Midhun Raj",
+  "Nimisha Thomas",
+  "Prakash Iyer",
+  "Reshma George",
+  "Sajan Kurian",
+  "Teena Mathew",
+  "Unni Krishnan",
+  "Vidya Sasidharan",
+  "Wilson Joseph",
+  "Yamuna Devi",
+  "Zubair Ahmed",
+  "Anu Philip",
+  "Biju Antony",
+  "Chithra Mohan",
+  "Deepak Suresh",
+  "Elsa Jacob",
+  "Faisal Hameed",
+  "Gayathri Ramesh",
+  "Hari Shankar",
+  "Indu Prasad",
+  "Jerin Abraham",
+  "Kavya Unnikrishnan",
+];
+const PRODUCT_KEYS = Object.keys(
+  DEMO_PRODUCTS,
+) as (keyof typeof DEMO_PRODUCTS)[];
+
+/**
+ * Fresh demo orders #3001-#3030 for testing: all pending, placed today (one every 15 minutes from 9:00 AM),
+ * newest first. Each has one or two products. Print their barcodes with: npm run barcodes -- 3001 3030
+ */
+const SERIES_3000_ORDERS: OrderRecord[] = SERIES_3000_CUSTOMERS.map(
+  (name, i) => {
+    const number = 3001 + i;
+    const minutes = 9 * 60 + i * 15;
+    const hour = Math.floor(minutes / 60);
+    const time = `${((hour + 11) % 12) + 1}:${String(minutes % 60).padStart(2, "0")} ${hour < 12 ? "AM" : "PM"}`;
+    const phone = `+91 9${String(8470000000 + number * 7919).slice(0, 4)} ${String(10000 + ((number * 3571) % 90000))}`;
+    const first = PRODUCT_KEYS[i % PRODUCT_KEYS.length];
+    const second = PRODUCT_KEYS[(i * 2 + 3) % PRODUCT_KEYS.length];
+    const lines: [keyof typeof DEMO_PRODUCTS, number][] =
+      i % 3 === 0
+        ? [
+            [first, 1],
+            [second, 1],
+          ]
+        : [[first, (i % 2) + 1]];
+    return pendingDemoOrder(number, name, phone, time, lines, "27 Nov 2026");
+  },
+).reverse();
 
 /** More orders waiting to be packed, newest first. */
 const MORE_PENDING_ORDERS: OrderRecord[] = [
@@ -179,6 +240,7 @@ const MORE_PENDING_ORDERS: OrderRecord[] = [
 
 /** Shown when the API or Shopify is not connected. */
 export const DEMO_ORDERS: OrderRecord[] = [
+  ...SERIES_3000_ORDERS,
   ...MORE_PENDING_ORDERS,
   {
     id: "ord-10582",

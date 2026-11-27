@@ -300,9 +300,32 @@ export class OrderService {
         for (const o of orders) mockOrdersStore.set(o.orderNumber.replace(/^#/, ""), o);
         return orders.filter((o) => o.fulfillmentStatus !== CANCELLED).map((o) => this.withMockPacked(o));
       }
-      return Array.from(mockOrdersStore.values())
+      const listed = Array.from(mockOrdersStore.values())
         .filter((o) => o.fulfillmentStatus !== CANCELLED)
         .map((o) => this.withMockPacked(o));
+      // The demo orders themselves live in the dashboard; only their Packed marks are saved here (on disk).
+      // The list above is in memory and starts empty after a restart, so add every saved mark the dashboard
+      // needs to show those demo orders as Packed.
+      const known = new Set(listed.map((o) => o.id));
+      for (const [id, packedAt] of mockPacked) {
+        if (known.has(id) || !id.startsWith("ord-")) continue;
+        listed.push({
+          id,
+          shopifyOrderId: id,
+          orderNumber: `#${id.slice("ord-".length)}`,
+          customerName: "",
+          customerEmail: "",
+          currency: "INR",
+          totalPrice: "0",
+          items: [],
+          fulfillmentStatus: "unfulfilled",
+          deliveryStatus: DeliveryStatus.PENDING,
+          packedAt,
+          createdAt: packedAt,
+          updatedAt: packedAt,
+        });
+      }
+      return listed;
     }
 
     // With a database, seed it from Shopify on first use; webhooks keep it current afterwards.
