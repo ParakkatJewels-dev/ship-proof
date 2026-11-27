@@ -69,6 +69,21 @@ const METAFIELDS_SET = `
   }
 `;
 
+const TAGS_ADD = `
+  mutation ShipProofPackedTag($id: ID!, $tags: [String!]!) {
+    tagsAdd(id: $id, tags: $tags) {
+      userErrors { field message }
+    }
+  }
+`;
+
+/**
+ * Tag added to an order once its packing video link is on it. Shopify Flow has no "metafield changed"
+ * trigger, so a Flow starts on "Order tags added" with this tag and reads the link from the order
+ * (for example to send the customer a WhatsApp message through Spur).
+ */
+export const PACKED_TAG = "shipproof-packed";
+
 const METAFIELDS_DELETE = `
   mutation ShipProofClearVideoLink($metafields: [MetafieldIdentifierInput!]!) {
     metafieldsDelete(metafields: $metafields) {
@@ -408,6 +423,21 @@ export class ShopifyClient {
       const userErrors = result.data?.metafieldsSet.userErrors || [];
       if (result.errors?.length || userErrors.length) {
         logger.error("Failed to mark the Shopify order as packed:", { orderId, errors: result.errors, userErrors });
+        return false;
+      }
+
+      // Only after the link is saved, so a Flow started by the tag always finds it.
+      const tagged = await this.graphql<{
+        tagsAdd: { userErrors: { field: string[]; message: string }[] };
+      }>(TAGS_ADD, { id: owner, tags: [PACKED_TAG] });
+      const tagErrors = tagged.data?.tagsAdd.userErrors || [];
+      if (tagged.errors?.length || tagErrors.length) {
+        // Reported as not done, so the regular Shopify retry runs this again (saving the link twice is harmless).
+        logger.error("Saved the video link but could not tag the Shopify order:", {
+          orderId,
+          errors: tagged.errors,
+          userErrors: tagErrors,
+        });
         return false;
       }
       return true;
