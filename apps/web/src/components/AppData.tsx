@@ -43,6 +43,11 @@ interface AppDataValue {
   navLocked: boolean;
   /** Starts recording the order and opens the packing page. Does nothing if recording could not start. */
   beginPacking: (order: OrderRecord) => void;
+  /**
+   * Same as scanning a barcode: an order number entered by hand (or scanned into the search box) starts
+   * packing that order, or finishes it if it is the one being recorded.
+   */
+  scanCode: (code: string) => void;
 }
 
 const AppDataContext = createContext<AppDataValue | null>(null);
@@ -360,6 +365,7 @@ export function AppDataProvider({ children }: { children: React.ReactNode }) {
         navLocked,
         openStartPacking: () => whenReady(() => setModalOpen(true)),
         beginPacking,
+        scanCode: (code) => void handleScan(code),
       }}
     >
       {children}

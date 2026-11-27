@@ -165,6 +165,11 @@ export function useOrders(limit = 50) {
 }
 
 /** Case-insensitive match on order number or customer name. */
+/** True for an order number such as "3012" or "#3012": what a barcode holds, or what a packer types to start packing. */
+export function isOrderNumber(query: string) {
+  return /^#?\d{3,}$/.test(query.trim());
+}
+
 export function matchesQuery(order: OrderRecord, query: string) {
   const q = query.trim().toLowerCase().replace(/^#/, "");
   if (!q) return true;

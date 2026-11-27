@@ -10,7 +10,7 @@ import {
   Timer,
 } from "lucide-react";
 import type { ActiveDevice } from "../lib/shipproofApi";
-import { matchesQuery } from "../lib/useOrders";
+import { isOrderNumber, matchesQuery } from "../lib/useOrders";
 import { formatAverage, usePackedToday } from "../lib/usePackedToday";
 import { useAppData } from "./AppData";
 import { AppShell, PageHeader } from "./AppShell";
@@ -96,7 +96,7 @@ function subscribeToStorage(onChange: () => void) {
 /* ------------------------------------------------------------------------- */
 
 export function VmsDashboard() {
-  const { orders: ordersData, device: deviceState } = useAppData();
+  const { orders: ordersData, device: deviceState, scanCode } = useAppData();
   const {
     orders,
     shopify,
@@ -134,6 +134,11 @@ export function VmsDashboard() {
     setSearchMessage(null);
     const q = searchQuery.trim();
     if (!q) return;
+    // An order number (typed, or scanned into this box) works like a barcode scan: it starts packing.
+    if (isOrderNumber(q)) {
+      setSearchQuery("");
+      return scanCode(q);
+    }
     const exact = orders.find(
       (o) => o.orderNumber.replace(/^#/, "") === q.replace(/^#/, ""),
     );

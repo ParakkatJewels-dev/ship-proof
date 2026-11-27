@@ -13,7 +13,7 @@ import {
   Share2,
 } from "lucide-react";
 import type { OrderRecord } from "../lib/orders";
-import { matchesQuery } from "../lib/useOrders";
+import { isOrderNumber, matchesQuery } from "../lib/useOrders";
 import { useAppData } from "./AppData";
 import { AppShell, PageHeader } from "./AppShell";
 import { Card, OrdersTable, isProcessing, processingOrderNumbers } from "./ui";
@@ -82,7 +82,13 @@ export function OrdersPage() {
   /** An order to show and highlight, for example the one whose packing was just cancelled. */
   const focusId = searchParams.get("focus");
 
-  const { orders: ordersData, device, packing, beginPacking } = useAppData();
+  const {
+    orders: ordersData,
+    device,
+    packing,
+    beginPacking,
+    scanCode,
+  } = useAppData();
   const {
     orders,
     shopify,
@@ -254,6 +260,12 @@ export function OrdersPage() {
   const shownOrders = visible.slice((page - 1) * pageSize, page * pageSize);
 
   const handleSearch = async () => {
+    // An order number (typed, or scanned into this box) works like a barcode scan: it starts packing.
+    if (isOrderNumber(searchQuery)) {
+      const code = searchQuery.trim();
+      setSearchQuery("");
+      return scanCode(code);
+    }
     if (!searchQuery.trim() || visible.length > 0) return;
     const found = await lookUp(searchQuery);
     // Show the looked-up order even if it sits under another tab.
