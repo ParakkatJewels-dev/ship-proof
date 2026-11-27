@@ -7,7 +7,19 @@ export const agentConfig = {
   stationId: process.env.STATION_ID || "11111111-1111-1111-1111-111111111111",
   stationApiKey: process.env.STATION_API_KEY || "station_key_hash_01",
   stationName: process.env.STATION_NAME || "Packing Bay 1",
-  cloudApiUrl: process.env.CLOUD_API_URL || "http://localhost:4000",
+  /**
+   * ShipProof servers this device reports to, comma separated, for example
+   * "http://localhost:4000,https://ship-proof-api-chi.vercel.app" to use one camera with both the local
+   * test site and the live site. Each recording is uploaded to the server whose dashboard started it.
+   */
+  cloudApiUrls: (process.env.CLOUD_API_URL || "http://localhost:4000")
+    .split(",")
+    .map((u) => u.trim().replace(/\/+$/, ""))
+    .filter(Boolean),
+  /** The first server in CLOUD_API_URL: used when a recording does not say which server it belongs to. */
+  get cloudApiUrl(): string {
+    return this.cloudApiUrls[0] ?? "http://localhost:4000";
+  },
   localHttpPort: parseInt(process.env.LOCAL_HTTP_PORT || "7890", 10),
   cameraDeviceIndex: parseInt(process.env.CAMERA_DEVICE_INDEX || "0", 10),
   cameraDeviceName: process.env.CAMERA_DEVICE_NAME || "Integrated Camera",

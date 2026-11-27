@@ -191,6 +191,10 @@ export function createLocalHttpServer() {
   app.post("/record/start", (req, res) => {
     try {
       const { orderId, orderNumber, sessionId, packerId } = req.body;
+      // The dashboard's own server. Anything not listed in CLOUD_API_URL falls back to the first one, so a
+      // page can never make this device upload somewhere else.
+      const asked = String(req.body.apiUrl || "").trim().replace(/\/+$/, "");
+      const apiUrl = agentConfig.cloudApiUrls.includes(asked) ? asked : agentConfig.cloudApiUrl;
       if (!orderId || !sessionId) {
         return res
           .status(400)
@@ -202,6 +206,7 @@ export function createLocalHttpServer() {
         orderNumber || `#${orderId}`,
         sessionId,
         packerId || "packer-station",
+        apiUrl,
       );
       cloudReporter.reportSoon();
       return res.json({

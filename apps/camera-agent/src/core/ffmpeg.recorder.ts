@@ -25,6 +25,8 @@ export interface RecordingSession {
   isMock: boolean;
   /** One-time key the dashboard needs to open this recording's live preview. */
   previewToken: string;
+  /** The ShipProof server this recording belongs to. */
+  apiUrl: string;
 }
 
 export interface StopResult {
@@ -158,6 +160,7 @@ export class FfmpegRecorder {
     orderNumber: string,
     sessionId: string,
     packerId: string,
+    apiUrl: string = agentConfig.cloudApiUrl,
   ): RecordingSession {
     if (this.session)
       throw new Error("A recording is already in progress on this station.");
@@ -178,6 +181,7 @@ export class FfmpegRecorder {
       orderId,
       orderNumber,
       packerId,
+      apiUrl,
       startedAt: startedAt.toISOString(),
       status: "recording",
       attempts: 0,
@@ -192,6 +196,7 @@ export class FfmpegRecorder {
       dir,
       isMock: false,
       previewToken: crypto.randomBytes(16).toString("hex"),
+      apiUrl,
     };
     this.latestFrame = null;
     this.stopping = false;

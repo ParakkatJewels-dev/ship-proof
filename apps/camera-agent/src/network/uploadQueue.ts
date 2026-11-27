@@ -19,6 +19,16 @@ const CHECK_INTERVAL_MS = 15_000;
 const MAX_BACKOFF_MS = 5 * 60_000;
 const UPLOAD_TIMEOUT_MS = 30 * 60_000;
 
+/** An upload as shown to the dashboards, plus the server it belongs to (never sent: used to pick who sees it). */
+export type TrackedUpload = UploadItem & { apiUrl: string };
+
+/** The server a recording belongs to: the one it was started from, if that is still configured. */
+export function serverFor(session: { apiUrl?: string }): string {
+  return session.apiUrl && agentConfig.cloudApiUrls.includes(session.apiUrl)
+    ? session.apiUrl
+    : agentConfig.cloudApiUrl;
+}
+
 const stationHeaders = {
   "Content-Type": "application/json",
   "X-Station-Id": agentConfig.stationId,
@@ -36,9 +46,9 @@ export class UploadQueue {
   /** Most recent upload error, for the status endpoint. */
   lastError: string | null = null;
   /** What the queue is doing right now: one video at a time. */
-  private active: UploadItem | null = null;
+  private active: TrackedUpload | null = null;
   /** Videos confirmed by the cloud in the last few minutes, so the dashboard can show them as done. */
-  private recentlyDone: UploadItem[] = [];
+  private recentlyDone: TrackedUpload[] = [];
   /** Called when the list changes, so the dashboard hears about progress at once instead of every 10 seconds. */
   onChange: (() => void) | null = null;
   private lastNotify = 0;
@@ -54,8 +64,8 @@ export class UploadQueue {
    * Every video the dashboard should list: the one being worked on, those waiting (or waiting to retry), and
    * those finished in the last three minutes. Read from disk each time, so it is right after a restart too.
    */
-  snapshot(): UploadItem[] {
-    const items: UploadItem[] = [];
+  snapshot(): TrackedUpload[] {
+    const items: TrackedUpload[] = [];
     if (this.active) items.push({ ...this.active });
     for (const s of this.pending()) {
       if (s.sessionId === this.active?.sessionId) continue;
@@ -63,6 +73,7 @@ export class UploadQueue {
       items.push({
         sessionId: s.sessionId,
         orderNumber: s.orderNumber,
+        apiUrl: serverFor(s),
         state: retryAt ? "retrying" : "waiting",
         totalBytes: s.fileSizeBytes,
         durationSeconds: s.durationSeconds,
@@ -142,14 +153,15 @@ export class UploadQueue {
   private async uploadOne(dir: string, session: SessionRecord) {
     // Smaller before upload. Never throws: on any problem the original video is uploaded.
     const willCompress = agentConfig.compressUpload && !session.mock && !session.compressed && !session.compressSkipped;
-    this.active = { sessionId: session.sessionId, orderNumber: session.orderNumber, state: willCompress ? "compressing" : "uploading", totalBytes: session.fileSizeBytes, durationSeconds: session.durationSeconds };
+    const server = serverFor(session);
+    this.active = { sessionId: session.sessionId, orderNumber: session.orderNumber, apiUrl: server, state: willCompress ? "compressing" : "uploading", totalBytes: session.fileSizeBytes, durationSeconds: session.durationSeconds };
     this.notify(true);
     session = await compressForUpload(dir, session);
     const file = path.join(dir, session.finalFile || "final.mp4");
     try {
       if (!fs.existsSync(file)) throw new Error("Recording file is missing");
       const size = fs.statSync(file).size;
-      this.active = { sessionId: session.sessionId, orderNumber: session.orderNumber, state: "uploading", totalBytes: size, bytesSent: 0, durationSeconds: session.durationSeconds };
+      this.active = { sessionId: session.sessionId, orderNumber: session.orderNumber, apiUrl: server, state: "uploading", totalBytes: size, bytesSent: 0, durationSeconds: session.durationSeconds };
       this.notify(true);
       agentLogger.info(
         `Uploading Order ${session.orderNumber} (${size} bytes, attempt ${session.attempts + 1})${session.interrupted ? " [interrupted recording]" : ""}...`,
@@ -157,7 +169,7 @@ export class UploadQueue {
 
       // 1. Ask the cloud where to upload.
       const urlRes = await fetch(
-        `${agentConfig.cloudApiUrl}/api/videos/upload-url`,
+        `${server}/api/videos/upload-url`,
         {
           method: "POST",
           headers: stationHeaders,
@@ -212,7 +224,7 @@ export class UploadQueue {
       if (this.active) this.active = { ...this.active, state: "confirming", bytesSent: size };
       this.notify(true);
       const doneRes = await fetch(
-        `${agentConfig.cloudApiUrl}/api/videos/complete`,
+        `${server}/api/videos/complete`,
         {
           method: "POST",
           headers: stationHeaders,
@@ -248,6 +260,7 @@ export class UploadQueue {
       this.recentlyDone.unshift({
         sessionId: session.sessionId,
         orderNumber: session.orderNumber,
+        apiUrl: server,
         state: "done",
         totalBytes: size,
         durationSeconds: session.durationSeconds,

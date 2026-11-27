@@ -13,6 +13,8 @@ export interface SessionRecord {
   orderNumber: string;
   packerId: string;
   startedAt: string;
+  /** The ShipProof server (one of CLOUD_API_URL) whose dashboard started this recording; it gets the upload. */
+  apiUrl?: string;
   /**
    * recording: in progress (or cut off by a crash).
    * review: finished, waiting for the packer to play, trim and save it. Nothing uploads yet.

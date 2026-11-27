@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { OrderRecord } from "./orders";
-import { AGENT_URL } from "./shipproofApi";
+import { AGENT_URL, API_URL } from "./shipproofApi";
 import { issues, type StartIssue } from "./startIssues";
 
 export interface PackingSession {
@@ -191,6 +191,8 @@ export function usePacking({
             orderNumber: order.orderNumber,
             sessionId,
             packerId,
+            // Which ShipProof server this page uses, so the video is uploaded there.
+            apiUrl: API_URL,
           }),
           signal: AbortSignal.timeout(START_TIMEOUT_MS),
         });
