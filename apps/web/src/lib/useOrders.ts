@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { DEMO_ORDERS, type OrderRecord } from "./orders";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { DEMO_ORDERS, placedMs, type OrderRecord } from "./orders";
 import { fetchOrders, fetchShopifyStatus, searchOrder } from "./shipproofApi";
 import { onOrdersChanged } from "./liveOrders";
 import { showToast } from "./alerts";
@@ -153,8 +153,14 @@ export function useOrders(limit = 50) {
       prev.map((o) => (o.id === orderId ? { ...o, status } : o)),
     );
 
+  // Oldest first everywhere (Orders page, dashboard, Start packing): orders are packed in the order they came in.
+  const oldestFirst = useMemo(
+    () => [...orders].sort((a, b) => placedMs(a) - placedMs(b)),
+    [orders],
+  );
+
   return {
-    orders,
+    orders: oldestFirst,
     shopify,
     searching,
     searchMessage,

@@ -16,11 +16,18 @@ export interface OrderRecord {
   itemCount: number;
   placedTime: string;
   placedDate: string;
+  /** When the order was placed (ISO time), for sorting. Demo orders leave it out and use placedDate + placedTime. */
+  placedAt?: string;
   status: "Pending" | "Packed" | "Dispatched";
   /** Cancelled in Shopify: never listed, and packing it is refused. */
   cancelled?: boolean;
   thumbnailUrl: string;
   items: OrderItem[];
+}
+
+/** When an order was placed, in milliseconds, for sorting oldest first. */
+export function placedMs(o: OrderRecord): number {
+  return Date.parse(o.placedAt ?? `${o.placedDate} ${o.placedTime}`) || 0;
 }
 
 /** The demo products, used to build more demo orders without repeating the details. */
