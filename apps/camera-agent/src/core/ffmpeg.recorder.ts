@@ -7,10 +7,12 @@ import { agentLogger } from "../utils/localLogger.js";
 import { finalizeSession } from "./finalize.js";
 import {
   listParts,
+  readSession,
   sessionDir,
   updateSession,
   writeSession,
 } from "./sessionStore.js";
+import { makeBrowserPlayable } from "./compress.js";
 import { streamMonitor } from "./streamMonitor.js";
 import { cameraInputArgs, parseStreamInfo } from "./cameraInfo.js";
 import { CameraStatus } from "@shipproof/shared";
@@ -232,7 +234,21 @@ export class FfmpegRecorder {
     );
     this.proc = proc;
 
+    // After a reconnect, the first picture marks the end of the gap.
+    let gapOpen = !!readSession(session.dir)?.gaps?.some((g) => !g.to);
     const parser = new JpegFrameParser((frame) => {
+      if (gapOpen) {
+        gapOpen = false;
+        const gaps = readSession(session.dir)?.gaps ?? [];
+        const open = gaps.find((g) => !g.to);
+        if (open) {
+          open.to = new Date().toISOString();
+          updateSession(session.dir, { gaps });
+          agentLogger.warn(
+            `Camera back for Order ${session.orderNumber} after ${((Date.parse(open.to) - Date.parse(open.from)) / 1000).toFixed(0)}s without video.`,
+          );
+        }
+      }
       this.latestFrame = Buffer.from(frame);
       for (const listener of this.frameListeners) listener(this.latestFrame);
     });
@@ -264,6 +280,12 @@ export class FfmpegRecorder {
         `FFmpeg stopped unexpectedly (code ${code}). Reconnecting to the camera in ${RESTART_DELAY_MS / 1000}s.`,
       );
       streamMonitor.setStatus(CameraStatus.ERROR);
+      // Note when the video stopped, so the jump in the finished video is explained.
+      const gaps = readSession(session.dir)?.gaps ?? [];
+      if (!gaps.some((g) => !g.to)) {
+        gaps.push({ from: new Date().toISOString() });
+        updateSession(session.dir, { gaps });
+      }
       this.restartTimer = setTimeout(() => {
         this.restartTimer = null;
         streamMonitor.setStatus(CameraStatus.CONNECTED);
@@ -329,10 +351,12 @@ export class FfmpegRecorder {
           discarded: true,
         };
       }
-      const final = finalizeSession(session.dir, {
+      let final = finalizeSession(session.dir, {
         interrupted: false,
         status: "review",
       });
+      // An H.265 recording (common from a DVR) is converted once so the review window can play it.
+      final = await makeBrowserPlayable(session.dir, final);
       const result: StopResult = {
         sessionId: session.sessionId,
         orderId: session.orderId,

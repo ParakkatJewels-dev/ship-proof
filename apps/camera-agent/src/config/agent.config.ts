@@ -24,6 +24,10 @@ export const agentConfig = {
   cameraDeviceIndex: parseInt(process.env.CAMERA_DEVICE_INDEX || "0", 10),
   cameraDeviceName: process.env.CAMERA_DEVICE_NAME || "Integrated Camera",
   rtspStreamUrl: process.env.RTSP_STREAM_URL,
+  /** RTSP (DVR / IP camera): seconds without video before the connection is given up and retried. */
+  rtspTimeoutSeconds: parseInt(process.env.RTSP_TIMEOUT_SECONDS || "10", 10),
+  /** RTSP: how often, in seconds, the stream is checked while nothing is recording. */
+  rtspCheckSeconds: parseInt(process.env.RTSP_CHECK_SECONDS || "30", 10),
   recordingsDir: path.resolve(
     process.cwd(),
     process.env.LOCAL_RECORDINGS_DIR || "./recordings",
@@ -33,18 +37,26 @@ export const agentConfig = {
   keepLocalCopies: process.env.KEEP_LOCAL_COPIES === "true",
   /** Make each finished video smaller before it is uploaded (about 5 times smaller). Set to false to upload as recorded. */
   compressUpload: process.env.COMPRESS_UPLOAD !== "false",
-  /** Quality of the compressed video: lower is sharper and larger. 28 looks close to the original. */
-  compressCrf: parseInt(process.env.COMPRESS_CRF || "28", 10),
   /**
-   * Frames per second of the compressed video. 30 keeps hand movements smooth; 15 halved the size but looked
-   * jerky, especially with a phone camera over WiFi whose frames already arrive unevenly.
+   * Quality of the compressed video: lower is sharper and larger. 28 looks close to the original for a
+   * webcam; a DVR / IP camera (RTSP) defaults to 23, to keep labels and barcodes readable at 1080p.
+   */
+  compressCrf: parseInt(process.env.COMPRESS_CRF || (process.env.RTSP_STREAM_URL ? "23" : "28"), 10),
+  /**
+   * Highest frame rate of the compressed video. A camera that delivers fewer (a DVR usually sends 25) keeps
+   * its own rate: frames are never duplicated. 15 halved the size but looked jerky.
    */
   compressFps: parseInt(process.env.COMPRESS_FPS || "30", 10),
   /**
    * Ceiling on the video's data rate, in kilobits per second. 1000 means a 3-minute video is never more than
    * about 22 MB, however busy the scene. Quiet scenes stay smaller. 0 turns the ceiling off.
    */
-  compressMaxKbps: parseInt(process.env.COMPRESS_MAX_KBPS || "1000", 10),
+  compressMaxKbps: parseInt(process.env.COMPRESS_MAX_KBPS || (process.env.RTSP_STREAM_URL ? "3000" : "1000"), 10),
+  /**
+   * Optional: upload an H.264 recording as it is (no re-encoding, no quality loss) when its average data
+   * rate is at most this many kilobits per second. 0 (the default) always compresses.
+   */
+  compressSkipBelowKbps: parseInt(process.env.COMPRESS_SKIP_BELOW_KBPS || "0", 10),
   /** Tallest picture kept, in pixels. A 720p or 1080p camera is left as it is; anything bigger (for example 4K) is reduced to this. */
   compressMaxHeight: parseInt(process.env.COMPRESS_MAX_HEIGHT || "1080", 10),
   /** ffmpeg speed setting: slower is smaller but takes longer. */

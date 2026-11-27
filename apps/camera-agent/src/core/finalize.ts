@@ -103,7 +103,8 @@ export function finalizeSession(
   const videoSeconds = session.mock ? null : probeDurationSeconds(finalPath);
   const updated = updateSession(dir, {
     status,
-    interrupted: opts.interrupted,
+    // Also when the camera dropped and came back during the recording: the video has a jump.
+    interrupted: opts.interrupted || !!session.gaps?.length,
     stoppedAt: new Date(endedMs).toISOString(),
     durationSeconds: Math.max(1, Math.round((endedMs - startedMs) / 1000)),
     finalFile: path.basename(finalPath),

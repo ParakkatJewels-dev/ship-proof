@@ -42,6 +42,11 @@ export interface SessionRecord {
   compressSkipped?: boolean;
   /** Size of the video before compression. */
   originalFileSizeBytes?: number;
+  /**
+   * Times the camera stream dropped during the recording and came back (`to`), so a jump in the video is
+   * explained. A recording with gaps is marked interrupted.
+   */
+  gaps?: { from: string; to?: string }[];
   attempts: number;
   nextAttemptAt?: string;
   lastError?: string;

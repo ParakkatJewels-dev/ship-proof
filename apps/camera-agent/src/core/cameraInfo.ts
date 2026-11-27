@@ -21,7 +21,16 @@ export const getCameraInfo = (): CameraInfo => info;
 /** The ffmpeg arguments that open the camera. Shared by recording and by the check below. */
 export function cameraInputArgs(): string[] {
   if (agentConfig.rtspStreamUrl)
-    return ["-rtsp_transport", "tcp", "-i", agentConfig.rtspStreamUrl];
+    return [
+      "-rtsp_transport",
+      "tcp",
+      // If the DVR stops sending video without closing the connection, give up after this long (microseconds),
+      // so the recorder notices and reconnects instead of waiting forever.
+      "-timeout",
+      String(agentConfig.rtspTimeoutSeconds * 1_000_000),
+      "-i",
+      agentConfig.rtspStreamUrl,
+    ];
   return process.platform === "win32"
     ? ["-f", "dshow", "-i", `video=${agentConfig.cameraDeviceName}`]
     : ["-f", "v4l2", "-i", `/dev/video${agentConfig.cameraDeviceIndex}`];

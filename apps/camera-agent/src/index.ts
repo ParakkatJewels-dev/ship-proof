@@ -28,8 +28,9 @@ async function main() {
   // A recording that ended by itself (maximum length) shows up on the dashboard with the next report.
   recorder.onAutoStop = () => cloudReporter.reportSoon();
 
-  // 3. Start stream health monitor
-  streamMonitor.startHealthCheck();
+  // 3. Start stream health monitor (a DVR / IP camera stream is really checked while idle).
+  streamMonitor.onChange = () => cloudReporter.reportSoon();
+  streamMonitor.startHealthCheck(() => recorder.isRecording());
 
   // 4. Start local zero-latency HTTP server
   const localApp = createLocalHttpServer();
