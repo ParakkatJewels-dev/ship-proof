@@ -437,6 +437,7 @@ export function OrdersPage() {
                 renderAction={renderAction}
                 highlightId={focusId}
                 processing={processing}
+                showPackedOn
               />
             </div>
           )}

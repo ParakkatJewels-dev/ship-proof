@@ -39,13 +39,13 @@ export function useOrders(limit = 50) {
           });
           // The demo orders live in the browser, but an order packed during a test is saved by the API.
           // Show those as Packed, so the status survives a reload just as it will with a real store.
-          let packed = new Set<string>();
+          let packed = new Map<string, string | undefined>();
           try {
             const saved = await fetchOrders(limit);
-            packed = new Set(
+            packed = new Map(
               saved
                 .filter((o) => o.status === "Packed")
-                .map((o) => o.orderNumber),
+                .map((o) => [o.orderNumber, o.packedAt]),
             );
           } catch {
             // Could not read the saved state; show the plain demo list.
@@ -53,7 +53,13 @@ export function useOrders(limit = 50) {
           if (!cancelled)
             setOrders(
               DEMO_ORDERS.map((o) =>
-                packed.has(o.orderNumber) ? { ...o, status: "Packed" } : o,
+                packed.has(o.orderNumber)
+                  ? {
+                      ...o,
+                      status: "Packed",
+                      packedAt: packed.get(o.orderNumber) ?? o.packedAt,
+                    }
+                  : o,
               ),
             );
           return;
@@ -148,9 +154,17 @@ export function useOrders(limit = 50) {
   };
 
   /** Updates one order's status locally, for example when packing starts or finishes. */
-  const updateStatus = (orderId: string, status: OrderRecord["status"]) =>
+  const updateStatus = (
+    orderId: string,
+    status: OrderRecord["status"],
+    packedAt?: string,
+  ) =>
     setOrders((prev) =>
-      prev.map((o) => (o.id === orderId ? { ...o, status } : o)),
+      prev.map((o) =>
+        o.id === orderId
+          ? { ...o, status, ...(packedAt ? { packedAt } : {}) }
+          : o,
+      ),
     );
 
   // Oldest first everywhere (Orders page, dashboard, Start packing): orders are packed in the order they came in.

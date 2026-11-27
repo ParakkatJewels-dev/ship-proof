@@ -18,6 +18,8 @@ export interface OrderRecord {
   placedDate: string;
   /** When the order was placed (ISO time), for sorting. Demo orders leave it out and use placedDate + placedTime. */
   placedAt?: string;
+  /** When packing was recorded: the moment the recording started (ISO time). Only for packed orders. */
+  packedAt?: string;
   status: "Pending" | "Packed" | "Dispatched";
   /** Cancelled in Shopify: never listed, and packing it is refused. */
   cancelled?: boolean;
@@ -246,8 +248,7 @@ const MORE_PENDING_ORDERS: OrderRecord[] = [
   ]),
 ];
 
-/** Shown when the API or Shopify is not connected. */
-export const DEMO_ORDERS: OrderRecord[] = [
+const DEMO_ORDER_LIST: OrderRecord[] = [
   ...SERIES_3000_ORDERS,
   ...MORE_PENDING_ORDERS,
   {
@@ -453,6 +454,13 @@ export const DEMO_ORDERS: OrderRecord[] = [
     ],
   },
 ];
+
+/** Shown when the API or Shopify is not connected. The built-in packed orders were "packed" 12 minutes after they were placed. */
+export const DEMO_ORDERS: OrderRecord[] = DEMO_ORDER_LIST.map((o) =>
+  o.status === "Packed" && !o.packedAt
+    ? { ...o, packedAt: new Date(placedMs(o) + 12 * 60_000).toISOString() }
+    : o,
+);
 
 export const ORDER_STATUSES: OrderRecord["status"][] = [
   "Pending",

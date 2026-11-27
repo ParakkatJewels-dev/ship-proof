@@ -66,7 +66,11 @@ export function usePacking({
   deviceConnected: boolean;
   deviceRecording: DeviceRecording | null;
   deviceReview: DeviceReview | null;
-  onStatusChange: (orderId: string, status: OrderRecord["status"]) => void;
+  onStatusChange: (
+    orderId: string,
+    status: OrderRecord["status"],
+    packedAt?: string,
+  ) => void;
   /** A video is about to be saved and uploaded: show it in the uploads list at once. */
   onUploadExpected?: (sessionId: string, orderNumber: string) => void;
   /** The save announced by onUploadExpected did not happen. */
@@ -317,7 +321,8 @@ export function usePacking({
       setFinishing(false);
       if (current.sessionId) setEndedSessionId(current.sessionId);
       setLocal({ status: "idle" });
-      if (current.orderId) statusCallback.current(current.orderId, "Packed");
+      if (current.orderId)
+        statusCallback.current(current.orderId, "Packed", current.startedAt);
       setMessage({
         tone: "ok",
         text: `Video for ${current.orderNumber} saved and uploading.`,

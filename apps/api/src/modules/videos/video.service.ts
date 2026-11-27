@@ -188,7 +188,8 @@ export class VideoService {
     });
 
     await this.removeReplacedVideos(orderId, video.id);
-    await orderService.markPacked(orderId, now);
+    // "Packed on" is when the packer started recording this order (the scan), not when the upload finished.
+    await orderService.markPacked(orderId, video.recordedAt ?? now);
     await this.publishToShopify({ ...video, watchTokenHash: hash }, token);
 
     return toSummary((await repo.findBySession(sessionId)) ?? video);

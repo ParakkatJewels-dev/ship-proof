@@ -81,6 +81,7 @@ export function toOrderRecord(o: ApiOrder): OrderRecord {
     }),
     placedDate: dateLabel(created),
     placedAt: o.createdAt,
+    packedAt: o.packedAt ?? undefined,
     // Packed is decided by the server (a saved video), so it is still true after a reload or a shipment.
     status: o.packedAt ? "Packed" : shipped ? "Dispatched" : "Pending",
     cancelled: o.fulfillmentStatus === "cancelled",

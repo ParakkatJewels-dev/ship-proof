@@ -19,6 +19,19 @@ export function Card({
   );
 }
 
+/** "27 Nov 2026" and "2:53 PM" for a packed time, in the same style as the order date. */
+function packedLabel(iso: string) {
+  const d = new Date(iso);
+  return {
+    date: d.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    }),
+    time: d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+  };
+}
+
 /** "Processing": recorded and saved, but the video is still being compressed or uploaded. */
 type ShownStatus = OrderRecord["status"] | "Processing";
 
@@ -64,10 +77,13 @@ export function OrdersTable({
   highlightId,
   renderAction,
   processing,
+  showPackedOn = false,
 }: {
   orders: OrderRecord[];
   highlightId?: string | null;
   renderAction?: (order: OrderRecord) => React.ReactNode;
+  /** Adds a "Packed on" column: when the packing was recorded (the start of the recording). */
+  showPackedOn?: boolean;
   /** Orders whose video is still uploading; they show "Processing" instead of their status. */
   processing?: Set<string>;
 }) {
@@ -83,12 +99,17 @@ export function OrdersTable({
       >
         <thead>
           <tr className="text-left text-[11px] uppercase tracking-wide text-muted">
-            <th scope="col" className={`${head} w-[14%]`}>
+            <th scope="col" className={`${head} w-24`}>
               Order ID
             </th>
             <th scope="col" className={`${head} w-28`}>
               Order date
             </th>
+            {showPackedOn && (
+              <th scope="col" className={`${head} w-28`}>
+                Packed on
+              </th>
+            )}
             <th scope="col" className={`${head} w-[36%]`}>
               Product name
             </th>
@@ -133,6 +154,24 @@ export function OrdersTable({
                   </div>
                 </div>
               </td>
+              {showPackedOn && (
+                <td className={`${cell} px-4 py-3 whitespace-nowrap`}>
+                  <div className="h-12 flex flex-col justify-center">
+                    {order.status === "Packed" && order.packedAt ? (
+                      <>
+                        <div className="leading-5">
+                          {packedLabel(order.packedAt).date}
+                        </div>
+                        <div className="text-[11px] text-muted">
+                          {packedLabel(order.packedAt).time}
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-muted">—</span>
+                    )}
+                  </div>
+                </td>
+              )}
               <td className={`${cell} px-4 py-3`}>
                 {order.items.map((it, n) => (
                   <div
